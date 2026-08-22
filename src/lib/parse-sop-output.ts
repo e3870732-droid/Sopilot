@@ -1,8 +1,8 @@
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
 import { isCompanyScale, isIndustry } from "@/types/company";
-import { isBudgetTier, isPlatform, isStage } from "@/types/situation";
+import { isBudgetTier, isPlatform } from "@/types/situation";
 import { isOperationType, isPrimaryProblem, isTeamSize } from "@/types/user-profile";
-import type { CustomSubcategory, SopOutput } from "@/types/workflow";
+import type { ContextAnswers, CustomSubcategory, SopOutput } from "@/types/workflow";
 
 export type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -23,7 +23,6 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
   const industry = readParams(params, "industry").find(isIndustry);
   const companyScale = readParams(params, "companyScale").find(isCompanyScale);
   const businessModel = readParams(params, "businessModel")[0]?.trim();
-  const stage = readParams(params, "stage").find(isStage);
   const platforms = readParams(params, "platform").filter(isPlatform);
   const budgetTier = readParams(params, "budgetTier").find(isBudgetTier);
 
@@ -34,6 +33,33 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
     }))
     .filter((item): item is CustomSubcategory => isOperationType(item.operationType) && item.name.length > 0);
 
+  // 条件追问：只在命中条件时要求答案
+  const contextAnswers: ContextAnswers = {};
+  if (subcategoryIds.includes("ecommerce_livestream")) {
+    const value = readParams(params, "livestreamGoods")[0];
+    if (value === "own_goods" || value === "consignment") {
+      contextAnswers.livestreamGoods = value;
+    } else {
+      return null;
+    }
+  }
+  if (subcategoryIds.includes("user_private_domain")) {
+    const value = readParams(params, "privateDomainSize")[0];
+    if (value === "lt500" || value === "500_to_5000" || value === "gt5000") {
+      contextAnswers.privateDomainSize = value;
+    } else {
+      return null;
+    }
+  }
+  if (industry && ["healthcare", "finance", "education"].includes(industry)) {
+    const value = readParams(params, "hasLegalReviewer")[0];
+    if (value === "yes" || value === "no") {
+      contextAnswers.hasLegalReviewer = value;
+    } else {
+      return null;
+    }
+  }
+
   if (
     operationTypes.length === 0 ||
     !teamSize ||
@@ -42,7 +68,6 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
     !industry ||
     !companyScale ||
     !businessModel ||
-    !stage ||
     platforms.length === 0 ||
     !budgetTier
   ) {
@@ -51,12 +76,13 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
 
   return mapSelectionToSop({
     company: { industry, businessModel, companyScale },
-    situation: { stage, platforms, budgetTier },
+    situation: { platforms, budgetTier },
     operationTypes,
     subcategoryIds,
     customSubcategories,
     teamSize,
     primaryProblem,
-    customPrimaryProblem
+    customPrimaryProblem,
+    contextAnswers
   });
 }

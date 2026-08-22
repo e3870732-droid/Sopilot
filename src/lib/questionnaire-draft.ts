@@ -1,7 +1,7 @@
 import type { CompanyScale, Industry } from "@/types/company";
-import type { BudgetTier, Platform, Stage } from "@/types/situation";
+import type { BudgetTier, Platform } from "@/types/situation";
 import type { OperationType, PrimaryProblem, TeamSize } from "@/types/user-profile";
-import type { CustomSubcategory } from "@/types/workflow";
+import type { ContextAnswers, CustomSubcategory } from "@/types/workflow";
 
 export interface QuestionnaireDraft {
   step: number;
@@ -12,11 +12,13 @@ export interface QuestionnaireDraft {
   selectedSubcategoryIds: string[];
   customSubcategories: CustomSubcategory[];
   teamSize: TeamSize | null;
-  stage: Stage | null;
   platforms: Platform[];
   budgetTier: BudgetTier | null;
   primaryProblem: PrimaryProblem | null;
   customPrimaryProblem: string;
+  livestreamGoods: ContextAnswers["livestreamGoods"] | null;
+  privateDomainSize: ContextAnswers["privateDomainSize"] | null;
+  hasLegalReviewer: ContextAnswers["hasLegalReviewer"] | null;
 }
 
 const STORAGE_KEY = "sopilot:questionnaire:draft";
@@ -31,11 +33,13 @@ function normalizeDraft(value: Partial<QuestionnaireDraft>): QuestionnaireDraft 
     selectedSubcategoryIds: Array.isArray(value.selectedSubcategoryIds) ? value.selectedSubcategoryIds : [],
     customSubcategories: Array.isArray(value.customSubcategories) ? value.customSubcategories : [],
     teamSize: value.teamSize ?? null,
-    stage: value.stage ?? null,
     platforms: Array.isArray(value.platforms) ? value.platforms : [],
     budgetTier: value.budgetTier ?? null,
     primaryProblem: value.primaryProblem ?? null,
-    customPrimaryProblem: typeof value.customPrimaryProblem === "string" ? value.customPrimaryProblem : ""
+    customPrimaryProblem: typeof value.customPrimaryProblem === "string" ? value.customPrimaryProblem : "",
+    livestreamGoods: value.livestreamGoods ?? null,
+    privateDomainSize: value.privateDomainSize ?? null,
+    hasLegalReviewer: value.hasLegalReviewer ?? null
   };
 }
 

@@ -11,17 +11,17 @@ import { Button } from "@/components/ui/button";
 import { COMPANY_SCALE_OPTIONS, INDUSTRY_OPTIONS } from "@/data/company";
 import { getOperationCategory } from "@/data/categories";
 import { getOptionLabel, questions } from "@/data/questions";
-import { BUDGET_OPTIONS, PLATFORM_OPTIONS, STAGE_OPTIONS } from "@/data/situation";
+import { BUDGET_OPTIONS, PLATFORM_OPTIONS } from "@/data/situation";
 import { findSubcategory, getSubcategories } from "@/data/subcategories";
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
 import { EMPHASIS_FOCUS } from "@/lib/workflow-customizer";
 import { cn } from "@/lib/utils";
 import { loadQuestionnaireDraft, saveQuestionnaireDraft, type QuestionnaireDraft } from "@/lib/questionnaire-draft";
 import { isCompanyScale, isIndustry, type CompanyProfile, type CompanyScale, type Industry } from "@/types/company";
-import { isBudgetTier, isPlatform, isStage, type BudgetTier, type Platform, type SituationProfile, type Stage } from "@/types/situation";
+import { isBudgetTier, isPlatform, type BudgetTier, type Platform, type SituationProfile } from "@/types/situation";
 import { isPrimaryProblem, isTeamSize } from "@/types/user-profile";
 import type { OperationType, PrimaryProblem, TeamSize } from "@/types/user-profile";
-import type { CustomSubcategory } from "@/types/workflow";
+import type { ContextAnswers, CustomSubcategory } from "@/types/workflow";
 
 const TOTAL_STEPS = 4;
 
@@ -36,13 +36,41 @@ export default function QuestionnairePage() {
   const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<string[]>([]);
   const [customSubcategories, setCustomSubcategories] = useState<CustomSubcategory[]>([]);
   const [teamSize, setTeamSize] = useState<TeamSize | null>(null);
-  const [stage, setStage] = useState<Stage | null>(null);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [budgetTier, setBudgetTier] = useState<BudgetTier | null>(null);
   const [primaryProblem, setPrimaryProblem] = useState<PrimaryProblem | null>(null);
   const [customPrimaryProblem, setCustomPrimaryProblem] = useState("");
+  const [livestreamGoods, setLivestreamGoods] = useState<ContextAnswers["livestreamGoods"] | null>(null);
+  const [privateDomainSize, setPrivateDomainSize] = useState<ContextAnswers["privateDomainSize"] | null>(null);
+  const [hasLegalReviewer, setHasLegalReviewer] = useState<ContextAnswers["hasLegalReviewer"] | null>(null);
 
   const isConfirmStep = step >= TOTAL_STEPS;
+
+  // 条件追问的触发条件
+  const showLivestreamGoods = selectedSubcategoryIds.includes("ecommerce_livestream");
+  const showPrivateDomainSize = selectedSubcategoryIds.includes("user_private_domain");
+  const showLegalReviewer = Boolean(
+    industry && ["healthcare", "finance", "education"].includes(industry)
+  );
+
+  const contextAnswers = useMemo<ContextAnswers>(() => {
+    const answers: ContextAnswers = {};
+    if (showLivestreamGoods && livestreamGoods) {
+      answers.livestreamGoods = livestreamGoods;
+    }
+    if (showPrivateDomainSize && privateDomainSize) {
+      answers.privateDomainSize = privateDomainSize;
+    }
+    if (showLegalReviewer && hasLegalReviewer) {
+      answers.hasLegalReviewer = hasLegalReviewer;
+    }
+    return answers;
+  }, [hasLegalReviewer, livestreamGoods, privateDomainSize, showLegalReviewer, showLivestreamGoods, showPrivateDomainSize]);
+
+  const contextAnswersComplete =
+    (!showLivestreamGoods || livestreamGoods !== null) &&
+    (!showPrivateDomainSize || privateDomainSize !== null) &&
+    (!showLegalReviewer || hasLegalReviewer !== null);
 
   const company = useMemo<CompanyProfile | null>(() => {
     if (!industry || !companyScale || !businessModel.trim()) {
@@ -57,16 +85,15 @@ export default function QuestionnairePage() {
   }, [businessModel, companyScale, industry]);
 
   const situation = useMemo<SituationProfile | null>(() => {
-    if (!stage || !budgetTier || platforms.length === 0) {
+    if (!budgetTier || platforms.length === 0) {
       return null;
     }
 
     return {
-      stage,
       platforms,
       budgetTier
     };
-  }, [budgetTier, platforms, stage]);
+  }, [budgetTier, platforms]);
 
   const selection = useMemo(() => {
     if (
@@ -75,7 +102,8 @@ export default function QuestionnairePage() {
       !teamSize ||
       !primaryProblem ||
       (primaryProblem === "other" && !customPrimaryProblem.trim()) ||
-      selectedOperationTypes.length === 0
+      selectedOperationTypes.length === 0 ||
+      !contextAnswersComplete
     ) {
       return null;
     }
@@ -88,10 +116,13 @@ export default function QuestionnairePage() {
       customSubcategories,
       teamSize,
       primaryProblem,
-      customPrimaryProblem: customPrimaryProblem.trim()
+      customPrimaryProblem: customPrimaryProblem.trim(),
+      contextAnswers
     };
   }, [
     company,
+    contextAnswers,
+    contextAnswersComplete,
     customPrimaryProblem,
     customSubcategories,
     primaryProblem,
@@ -113,11 +144,13 @@ export default function QuestionnairePage() {
       selectedSubcategoryIds,
       customSubcategories,
       teamSize,
-      stage,
       platforms,
       budgetTier,
       primaryProblem,
-      customPrimaryProblem
+      customPrimaryProblem,
+      livestreamGoods,
+      privateDomainSize,
+      hasLegalReviewer
     }),
     [
       step,
@@ -128,11 +161,13 @@ export default function QuestionnairePage() {
       selectedSubcategoryIds,
       customSubcategories,
       teamSize,
-      stage,
       platforms,
       budgetTier,
       primaryProblem,
-      customPrimaryProblem
+      customPrimaryProblem,
+      livestreamGoods,
+      privateDomainSize,
+      hasLegalReviewer
     ]
   );
 
@@ -147,11 +182,13 @@ export default function QuestionnairePage() {
       setSelectedSubcategoryIds(saved.selectedSubcategoryIds);
       setCustomSubcategories(saved.customSubcategories);
       setTeamSize(saved.teamSize);
-      setStage(saved.stage);
       setPlatforms(saved.platforms);
       setBudgetTier(saved.budgetTier);
       setPrimaryProblem(saved.primaryProblem);
       setCustomPrimaryProblem(saved.customPrimaryProblem);
+      setLivestreamGoods(saved.livestreamGoods);
+      setPrivateDomainSize(saved.privateDomainSize);
+      setHasLegalReviewer(saved.hasLegalReviewer);
     }
     setMounted(true);
   }, []);
@@ -232,12 +269,20 @@ export default function QuestionnairePage() {
       params.append("customSubcategoryName", custom.name);
     });
     params.set("teamSize", selection.teamSize);
-    params.set("stage", selection.situation.stage);
     selection.situation.platforms.forEach((platform) => params.append("platform", platform));
     params.set("budgetTier", selection.situation.budgetTier);
     params.set("primaryProblem", selection.primaryProblem);
     if (selection.customPrimaryProblem) {
       params.set("customPrimaryProblem", selection.customPrimaryProblem);
+    }
+    if (selection.contextAnswers?.livestreamGoods) {
+      params.set("livestreamGoods", selection.contextAnswers.livestreamGoods);
+    }
+    if (selection.contextAnswers?.privateDomainSize) {
+      params.set("privateDomainSize", selection.contextAnswers.privateDomainSize);
+    }
+    if (selection.contextAnswers?.hasLegalReviewer) {
+      params.set("hasLegalReviewer", selection.contextAnswers.hasLegalReviewer);
     }
 
     router.push(`/result?${params.toString()}`);
@@ -371,28 +416,75 @@ export default function QuestionnairePage() {
 
         {step === 3 ? (
           <QuestionCard
-            title="你现在处在什么阶段？"
-            subtitle="这些问题决定你的工作流是冷启动版还是完整版。"
+            title="现状与卡点"
+            subtitle="这些答案会生成对应的执行提示，任务清单本体对所有人是同一套标准。"
           >
             <div className="space-y-8">
-              <section className="space-y-3">
-                <h2 className="text-sm font-semibold">运营阶段</h2>
-                <div className="space-y-3">
-                  {STAGE_OPTIONS.map((option) => (
+              {showLivestreamGoods ? (
+                <section className="space-y-3">
+                  <h2 className="text-sm font-semibold">货是自己的，还是帮别人卖？</h2>
+                  <div className="space-y-3">
                     <OptionCard
-                      key={option.id}
-                      selected={stage === option.id}
-                      onClick={() => {
-                        if (isStage(option.id)) {
-                          setStage(option.id);
-                        }
-                      }}
-                      label={option.label}
-                      description={option.description ?? ""}
+                      selected={livestreamGoods === "own_goods"}
+                      onClick={() => setLivestreamGoods("own_goods")}
+                      label="货是自己的"
+                      description="自有品牌或自有库存，定价与让利空间自己定"
                     />
-                  ))}
-                </div>
-              </section>
+                    <OptionCard
+                      selected={livestreamGoods === "consignment"}
+                      onClick={() => setLivestreamGoods("consignment")}
+                      label="帮别人卖"
+                      description="代卖赚佣金，重点是结算与售后责任划分"
+                    />
+                  </div>
+                </section>
+              ) : null}
+
+              {showPrivateDomainSize ? (
+                <section className="space-y-3">
+                  <h2 className="text-sm font-semibold">私域里大概多少好友？</h2>
+                  <div className="space-y-3">
+                    <OptionCard
+                      selected={privateDomainSize === "lt500"}
+                      onClick={() => setPrivateDomainSize("lt500")}
+                      label="0–500"
+                      description="适合 1 对 1 深度维护"
+                    />
+                    <OptionCard
+                      selected={privateDomainSize === "500_to_5000"}
+                      onClick={() => setPrivateDomainSize("500_to_5000")}
+                      label="500–5000"
+                      description="可以开始分层运营"
+                    />
+                    <OptionCard
+                      selected={privateDomainSize === "gt5000"}
+                      onClick={() => setPrivateDomainSize("gt5000")}
+                      label="5000+"
+                      description="需要工具化与规范化管理"
+                    />
+                  </div>
+                </section>
+              ) : null}
+
+              {showLegalReviewer ? (
+                <section className="space-y-3">
+                  <h2 className="text-sm font-semibold">有没有法务或审核的人能帮忙把关？</h2>
+                  <div className="space-y-3">
+                    <OptionCard
+                      selected={hasLegalReviewer === "yes"}
+                      onClick={() => setHasLegalReviewer("yes")}
+                      label="有"
+                      description="发布前可以走一遍专业审核"
+                    />
+                    <OptionCard
+                      selected={hasLegalReviewer === "no"}
+                      onClick={() => setHasLegalReviewer("no")}
+                      label="没有"
+                      description="需要靠自己做好合规自查"
+                    />
+                  </div>
+                </section>
+              ) : null}
 
               <section className="space-y-3">
                 <h2 className="text-sm font-semibold">主要在哪些平台做？</h2>
@@ -475,7 +567,8 @@ export default function QuestionnairePage() {
                 disabled={
                   !situation ||
                   !primaryProblem ||
-                  (primaryProblem === "other" && !customPrimaryProblem.trim())
+                  (primaryProblem === "other" && !customPrimaryProblem.trim()) ||
+                  !contextAnswersComplete
                 }
                 onClick={() => setStep(4)}
               >
@@ -532,12 +625,29 @@ export default function QuestionnairePage() {
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">现状与卡点</div>
                     <p className="mt-1">
-                      {STAGE_OPTIONS.find((item) => item.id === situation.stage)?.label} ·{" "}
                       {situation.platforms
                         .map((id) => PLATFORM_OPTIONS.find((item) => item.id === id)?.label ?? id)
-                        .join("、")} ·{" "}
-                      {BUDGET_OPTIONS.find((item) => item.id === situation.budgetTier)?.label}
+                        .join("、")}{" "}
+                      · {BUDGET_OPTIONS.find((item) => item.id === situation.budgetTier)?.label}
                     </p>
+                    <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+                      {contextAnswers.livestreamGoods ? (
+                        <p>直播货源：{contextAnswers.livestreamGoods === "own_goods" ? "货是自己的" : "帮别人卖"}</p>
+                      ) : null}
+                      {contextAnswers.privateDomainSize ? (
+                        <p>
+                          私域好友：
+                          {contextAnswers.privateDomainSize === "lt500"
+                            ? "0–500"
+                            : contextAnswers.privateDomainSize === "500_to_5000"
+                              ? "500–5000"
+                              : "5000+"}
+                        </p>
+                      ) : null}
+                      {contextAnswers.hasLegalReviewer ? (
+                        <p>法务/审核把关：{contextAnswers.hasLegalReviewer === "yes" ? "有" : "没有"}</p>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
                 {primaryProblem ? (

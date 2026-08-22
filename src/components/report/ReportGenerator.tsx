@@ -208,7 +208,6 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
 
   function buildAdjustedQuery(next: SopOutput): string {
     const params = new URLSearchParams(window.location.search);
-    params.set("stage", next.situation.stage);
     params.delete("platform");
     next.situation.platforms.forEach((platform) => params.append("platform", platform));
     params.set("budgetTier", next.situation.budgetTier);

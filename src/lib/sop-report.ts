@@ -1,6 +1,6 @@
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
-import { getBudgetTierLabel, getPlatformLabel, getStageLabel } from "@/data/situation";
+import { getBudgetTierLabel, getPlatformLabel } from "@/data/situation";
 import { getContextInjections, getExecutiveSummary } from "@/lib/workflow-enrichment";
 import type { OperationType } from "@/types/user-profile";
 import type { RoleWorksheet, SopOutput, SubFlow } from "@/types/workflow";
@@ -141,7 +141,6 @@ export function toReportMarkdown(report: SopReport): string {
   lines.push(`- 企业规模：${getCompanyScaleLabel(output.company.companyScale)}`);
   lines.push("");
   lines.push("## 现状与卡点");
-  lines.push(`- 运营阶段：${getStageLabel(output.situation.stage)}`);
   lines.push(`- 平台：${output.situation.platforms.map(getPlatformLabel).join("、")}`);
   lines.push(`- 预算：${getBudgetTierLabel(output.situation.budgetTier)}`);
   lines.push(`- 团队：${getOptionLabel("teamSize", output.teamSize)}`);

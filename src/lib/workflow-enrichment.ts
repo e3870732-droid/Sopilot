@@ -1,6 +1,6 @@
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
-import { getBudgetTierLabel, getPlatformLabel, getStageLabel } from "@/data/situation";
+import { getBudgetTierLabel, getPlatformLabel } from "@/data/situation";
 import { EMPHASIS_FOCUS, EMPHASIS_LABELS } from "@/lib/workflow-customizer";
 import type { RoleWorksheet, SopOutput } from "@/types/workflow";
 
@@ -8,7 +8,7 @@ export interface ExecutiveSummary {
   headline: string;
   northStar: string;
   priorities: { title: string; detail: string }[];
-  firstWeekAction: string;
+  onboardingAdvice: string;
 }
 
 export interface SevenDayItem {
@@ -25,10 +25,23 @@ function getPrimaryWorksheet(output: SopOutput): RoleWorksheet | null {
   return output.overview[0] ?? null;
 }
 
+/**
+ * 上手路径建议：不问用户，按已有答案自动写入总纲。
+ * 原则：阶段影响建议怎么说，不影响标准是什么——任务清单本体对所有人唯一。
+ */
+export function getOnboardingAdvice(output: SopOutput): string {
+  if (output.teamSize === "solo") {
+    return "前 4 周先只跑 P0 任务，跑顺了再逐步加 P1。";
+  }
+  if (output.primaryProblem === "lack_of_metrics") {
+    return "先拿完成标准自查 2 周，找到差距再上量。";
+  }
+  return "直接进入全量节奏，P0 先行，P2 可暂缓。";
+}
+
 export function getExecutiveSummary(output: SopOutput): ExecutiveSummary {
   const primary = getPrimaryWorksheet(output);
   const teamLabel = getOptionLabel("teamSize", output.teamSize);
-  const stageLabel = getStageLabel(output.situation.stage);
   const industryLabel = getIndustryLabel(output.company.industry);
 
   const steps = primary?.steps ?? [];
@@ -47,19 +60,11 @@ export function getExecutiveSummary(output: SopOutput): ExecutiveSummary {
     detail: EMPHASIS_FOCUS[output.primaryProblem]
   });
 
-  const firstWeekActions: Record<SopOutput["situation"]["stage"], string> = {
-    cold_start: "先只做 1 个平台、低频、轻任务，跑通一次完整闭环并复盘。",
-    struggling: "先做一次完整诊断，找出最卡的一环再集中投入，不盲目加量。",
-    stable_growth: "保持现有稳定产出，把增长类任务提升为本周第一优先级。"
-  };
-
-  const soloNote = output.teamSize === "solo" ? "单人阶段优先用检查清单和模板，减少来回交接。" : "";
-
   return {
-    headline: `为${industryLabel}「${output.company.businessModel}」团队生成 ${output.overview.length} 份岗位工作纸，适配 ${teamLabel}团队与「${stageLabel}」阶段。`,
+    headline: `为${industryLabel}「${output.company.businessModel}」团队生成 ${output.overview.length} 份岗位工作纸，适配 ${teamLabel}团队。`,
     northStar: primary?.northStar ?? "先把核心流程跑通，形成可复用的标准动作。",
     priorities: priorities.slice(0, 3),
-    firstWeekAction: [firstWeekActions[output.situation.stage], soloNote].filter(Boolean).join(" ")
+    onboardingAdvice: getOnboardingAdvice(output)
   };
 }
 
@@ -86,7 +91,7 @@ export function getSevenDayPlan(output: SopOutput): SevenDayItem[] {
 }
 
 export function getContextInjections(output: SopOutput): ContextInjection[] {
-  const { company, situation } = output;
+  const { company, situation, contextAnswers } = output;
   const injections: ContextInjection[] = [];
 
   if (situation.budgetTier === "none") {
@@ -104,7 +109,39 @@ export function getContextInjections(output: SopOutput): ContextInjection[] {
   if (["healthcare", "finance", "education"].includes(company.industry)) {
     injections.push({
       title: "合规提示",
-      body: "所属行业偏强监管，发布前务必完成合规自查，敏感词与资质材料先备好。"
+      body:
+        contextAnswers?.hasLegalReviewer === "yes"
+          ? "所属行业偏强监管，发布前走一遍法务/审核把关，并把审核节点写进标准流程。"
+          : "所属行业偏强监管且暂时没有法务/审核支持，发布前务必完成合规自查，先建好敏感词清单与发布前自查表。"
+    });
+  }
+
+  if (contextAnswers?.livestreamGoods === "own_goods") {
+    injections.push({
+      title: "直播提示",
+      body: "自有货源：定价与让利空间自己定，把库存周转和售后履约写进直播复盘。"
+    });
+  } else if (contextAnswers?.livestreamGoods === "consignment") {
+    injections.push({
+      title: "直播提示",
+      body: "帮别人卖：重点核对佣金结算、退换责任归属与样品管理，避免售后纠纷。"
+    });
+  }
+
+  if (contextAnswers?.privateDomainSize === "lt500") {
+    injections.push({
+      title: "私域提示",
+      body: "私域好友 0–500：适合 1 对 1 深度维护，优先做标签和信任，不急着做裂变。"
+    });
+  } else if (contextAnswers?.privateDomainSize === "500_to_5000") {
+    injections.push({
+      title: "私域提示",
+      body: "私域好友 500–5000：开始分层运营，用社群 + 朋友圈节奏化触达。"
+    });
+  } else if (contextAnswers?.privateDomainSize === "gt5000") {
+    injections.push({
+      title: "私域提示",
+      body: "私域好友 5000+：需要工具化 SOP（欢迎语、分层、群发规范），并关注账号安全。"
     });
   }
 
@@ -112,18 +149,6 @@ export function getContextInjections(output: SopOutput): ContextInjection[] {
     injections.push({
       title: "平台提示",
       body: `优先覆盖 ${situation.platforms.map(getPlatformLabel).join("、")}，按各平台口径调整标题、封面与发布时间。`
-    });
-  }
-
-  if (situation.stage === "cold_start") {
-    injections.push({
-      title: "冷启动提示",
-      body: "当前为冷启动阶段，先低频、单平台、轻任务跑通闭环，再逐步加量。"
-    });
-  } else if (situation.stage === "struggling") {
-    injections.push({
-      title: "诊断提示",
-      body: "已有一定投入但没起色，先复盘哪个环节最卡，先诊断再加量。"
     });
   }
 
@@ -197,9 +222,23 @@ export function toMarkdown(output: SopOutput): string {
   lines.push(`- 企业规模：${getCompanyScaleLabel(output.company.companyScale)}`);
   lines.push("");
   lines.push("## 现状与卡点");
-  lines.push(`- 运营阶段：${getStageLabel(output.situation.stage)}`);
   lines.push(`- 平台：${output.situation.platforms.map(getPlatformLabel).join("、")}`);
   lines.push(`- 预算：${getBudgetTierLabel(output.situation.budgetTier)}`);
+  if (output.contextAnswers?.livestreamGoods) {
+    lines.push(`- 直播货源：${output.contextAnswers.livestreamGoods === "own_goods" ? "货是自己的" : "帮别人卖"}`);
+  }
+  if (output.contextAnswers?.privateDomainSize) {
+    const sizeLabel =
+      output.contextAnswers.privateDomainSize === "lt500"
+        ? "0–500"
+        : output.contextAnswers.privateDomainSize === "500_to_5000"
+          ? "500–5000"
+          : "5000+";
+    lines.push(`- 私域好友规模：${sizeLabel}`);
+  }
+  if (output.contextAnswers?.hasLegalReviewer) {
+    lines.push(`- 法务/审核把关：${output.contextAnswers.hasLegalReviewer === "yes" ? "有" : "没有"}`);
+  }
   lines.push("");
   lines.push("## 本次优化重点");
   lines.push(`- 团队：${getOptionLabel("teamSize", output.teamSize)}`);
@@ -216,7 +255,7 @@ export function toMarkdown(output: SopOutput): string {
     lines.push(`${index + 1}. ${priority.title}：${priority.detail}`);
   });
   lines.push("");
-  lines.push(`**第一周行动**：${summary.firstWeekAction}`);
+  lines.push(`**上手路径建议**：${summary.onboardingAdvice}`);
   lines.push("");
   lines.push("## 7 天启动计划");
   sevenDayPlan.forEach((item) => {

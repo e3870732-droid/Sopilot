@@ -1,16 +1,10 @@
-import type { BudgetTier, Platform, Stage } from "@/types/situation";
+import type { BudgetTier, Platform } from "@/types/situation";
 
 export interface SituationOption<T extends string> {
   id: T;
   label: string;
   description?: string;
 }
-
-export const STAGE_OPTIONS: SituationOption<Stage>[] = [
-  { id: "cold_start", label: "还没开始，或刚开始", description: "冷启动阶段" },
-  { id: "struggling", label: "做了一段时间，没什么起色", description: "先诊断再加量" },
-  { id: "stable_growth", label: "做得还可以，想做得更好", description: "全量模板，增长类任务升权" }
-];
 
 export const PLATFORM_OPTIONS: SituationOption<Platform>[] = [
   { id: "douyin", label: "抖音" },
@@ -31,10 +25,6 @@ export const BUDGET_OPTIONS: SituationOption<BudgetTier>[] = [
   { id: "gt30k", label: "3 万以上" },
   { id: "unknown", label: "说不准" }
 ];
-
-export function getStageLabel(id: string): string {
-  return STAGE_OPTIONS.find((item) => item.id === id)?.label ?? id;
-}
 
 export function getPlatformLabel(id: string): string {
   return PLATFORM_OPTIONS.find((item) => item.id === id)?.label ?? id;

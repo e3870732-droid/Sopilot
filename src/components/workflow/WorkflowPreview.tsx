@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
-import { getBudgetTierLabel, getPlatformLabel, getStageLabel } from "@/data/situation";
+import { getBudgetTierLabel, getPlatformLabel } from "@/data/situation";
 import { EMPHASIS_LABELS, getScaleAdaptation } from "@/lib/workflow-customizer";
 import { getContextInjections, getExecutiveSummary, getSevenDayPlan } from "@/lib/workflow-enrichment";
 import type { SopOutput } from "@/types/workflow";
@@ -39,9 +39,7 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
           </div>
           <div>
             <div className="font-medium text-muted-foreground">现状</div>
-            <p className="mt-1">
-              {getStageLabel(output.situation.stage)} · {getBudgetTierLabel(output.situation.budgetTier)}
-            </p>
+            <p className="mt-1">{getBudgetTierLabel(output.situation.budgetTier)}</p>
           </div>
           <div>
             <div className="font-medium text-muted-foreground">团队与问题</div>
@@ -93,8 +91,8 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
             </ol>
           </div>
           <div className="rounded-lg border p-4">
-            <div className="font-medium">第一周行动</div>
-            <p className="mt-1 text-muted-foreground">{summary.firstWeekAction}</p>
+            <div className="font-medium">上手路径建议</div>
+            <p className="mt-1 text-muted-foreground">{summary.onboardingAdvice}</p>
           </div>
         </CardContent>
       </Card>

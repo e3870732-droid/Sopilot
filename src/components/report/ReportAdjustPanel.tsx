@@ -5,9 +5,9 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { questions } from "@/data/questions";
-import { BUDGET_OPTIONS, PLATFORM_OPTIONS, STAGE_OPTIONS } from "@/data/situation";
+import { BUDGET_OPTIONS, PLATFORM_OPTIONS } from "@/data/situation";
 import { cn } from "@/lib/utils";
-import type { BudgetTier, Platform, Stage } from "@/types/situation";
+import type { BudgetTier, Platform } from "@/types/situation";
 import type { PrimaryProblem, TeamSize } from "@/types/user-profile";
 import type { SopOutput } from "@/types/workflow";
 
@@ -20,7 +20,6 @@ const selectClassName =
   "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring";
 
 export function ReportAdjustPanel({ output, onApply }: ReportAdjustPanelProps) {
-  const [stage, setStage] = useState<Stage>(output.situation.stage);
   const [platforms, setPlatforms] = useState<Platform[]>(output.situation.platforms);
   const [budgetTier, setBudgetTier] = useState<BudgetTier>(output.situation.budgetTier);
   const [teamSize, setTeamSize] = useState<TeamSize>(output.teamSize);
@@ -48,7 +47,6 @@ export function ReportAdjustPanel({ output, onApply }: ReportAdjustPanelProps) {
       ...output,
       situation: {
         ...output.situation,
-        stage,
         platforms,
         budgetTier
       },
@@ -65,20 +63,6 @@ export function ReportAdjustPanel({ output, onApply }: ReportAdjustPanelProps) {
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-4 text-sm sm:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">运营阶段</label>
-            <select
-              value={stage}
-              onChange={(event) => setStage(event.target.value as Stage)}
-              className={selectClassName}
-            >
-              {STAGE_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">月投放预算</label>
             <select

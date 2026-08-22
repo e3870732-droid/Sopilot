@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoleWorksheetCard } from "@/components/workflow/RoleWorksheetCard";
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
-import { getBudgetTierLabel, getPlatformLabel, getStageLabel } from "@/data/situation";
+import { getBudgetTierLabel, getPlatformLabel } from "@/data/situation";
 import type { SopReport } from "@/lib/sop-report";
 
 export function ReportView({ report }: { report: SopReport }) {
@@ -29,9 +29,7 @@ export function ReportView({ report }: { report: SopReport }) {
           </div>
           <div>
             <div className="font-medium text-muted-foreground">现状</div>
-            <p className="mt-1">
-              {getStageLabel(output.situation.stage)} · {getBudgetTierLabel(output.situation.budgetTier)}
-            </p>
+            <p className="mt-1">{getBudgetTierLabel(output.situation.budgetTier)}</p>
           </div>
           <div>
             <div className="font-medium text-muted-foreground">平台</div>
