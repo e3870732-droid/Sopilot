@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { WorkflowPreview } from "@/components/workflow/WorkflowPreview";
-import { Badge } from "@/components/ui/badge";
+import { ResultActions } from "@/components/workflow/ResultActions";
 import { Button } from "@/components/ui/button";
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
+import { toMarkdown } from "@/lib/workflow-enrichment";
 import { isCompanyScale, isIndustry } from "@/types/company";
 import { isBudgetTier, isPlatform, isStage } from "@/types/situation";
 import { isOperationType, isPrimaryProblem, isTeamSize } from "@/types/user-profile";
@@ -102,15 +102,7 @@ export default async function ResultPage({
   return (
     <main className="min-h-screen px-6 py-10">
       <div className="mx-auto w-full max-w-4xl space-y-8">
-        <div className="flex items-center justify-between gap-4">
-          <Button asChild variant="ghost">
-            <Link href="/questionnaire">
-              <ArrowLeft />
-              返回问卷
-            </Link>
-          </Button>
-          <Badge variant="outline">开发阶段 Preview</Badge>
-        </div>
+        <ResultActions markdown={toMarkdown(output)} />
 
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">你的岗位工作纸</h1>

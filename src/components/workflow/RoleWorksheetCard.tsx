@@ -30,9 +30,14 @@ export function RoleWorksheetCard({ worksheet }: RoleWorksheetCardProps) {
       <CardContent className="space-y-8">
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">标准流程</h3>
-          <div className="space-y-3">
+          <div>
             {worksheet.steps.map((step, index) => (
-              <WorkflowStageCard key={step.title} index={index + 1} step={step} />
+              <WorkflowStageCard
+                key={step.title}
+                index={index + 1}
+                step={step}
+                isLast={index === worksheet.steps.length - 1}
+              />
             ))}
           </div>
         </section>

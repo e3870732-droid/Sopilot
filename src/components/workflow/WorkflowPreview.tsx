@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
 import { getBudgetTierLabel, getPlatformLabel, getStageLabel } from "@/data/situation";
-import { EMPHASIS_FOCUS, EMPHASIS_LABELS, getScaleAdaptation } from "@/lib/workflow-customizer";
+import { EMPHASIS_LABELS, getScaleAdaptation } from "@/lib/workflow-customizer";
+import { getContextInjections, getExecutiveSummary, getSevenDayPlan } from "@/lib/workflow-enrichment";
 import type { SopOutput } from "@/types/workflow";
 import { RoleWorksheetCard } from "./RoleWorksheetCard";
 
@@ -18,62 +19,121 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
     output.primaryProblem === "other"
       ? output.customPrimaryProblem || "其他"
       : getOptionLabel("primaryProblem", output.primaryProblem);
-  const companyScaleLabel = getCompanyScaleLabel(output.company.companyScale);
-  const stageLabel = getStageLabel(output.situation.stage);
-  const budgetLabel = getBudgetTierLabel(output.situation.budgetTier);
+  const summary = getExecutiveSummary(output);
+  const sevenDayPlan = getSevenDayPlan(output);
+  const injections = getContextInjections(output);
 
   return (
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>企业画像</CardTitle>
+          <CardTitle>生成摘要</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p>
-            {getIndustryLabel(output.company.industry)} · {output.company.businessModel} ·{" "}
-            {companyScaleLabel}
-          </p>
+        <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
+          <div>
+            <div className="font-medium text-muted-foreground">企业</div>
+            <p className="mt-1">
+              {getIndustryLabel(output.company.industry)} · {output.company.businessModel} ·{" "}
+              {getCompanyScaleLabel(output.company.companyScale)}
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-muted-foreground">现状</div>
+            <p className="mt-1">
+              {getStageLabel(output.situation.stage)} · {getBudgetTierLabel(output.situation.budgetTier)}
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-muted-foreground">团队与问题</div>
+            <p className="mt-1">
+              {teamLabel}团队 · 优先解决{problemLabel}
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-muted-foreground">优化重点</div>
+            <Badge className="mt-1">{EMPHASIS_LABELS[output.emphasis]}</Badge>
+          </div>
+          <div className="sm:col-span-2">
+            <div className="font-medium text-muted-foreground">平台</div>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {output.situation.platforms.map((platform) => (
+                <Badge key={platform} variant="secondary">
+                  {getPlatformLabel(platform)}
+                </Badge>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>现状与卡点</CardTitle>
+          <CardTitle>执行总览</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <p>
-            {stageLabel} · {budgetLabel}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {output.situation.platforms.map((platform) => (
-              <Badge key={platform} variant="secondary">
-                {getPlatformLabel(platform)}
-              </Badge>
-            ))}
+        <CardContent className="space-y-5 text-sm">
+          <p className="text-muted-foreground">{summary.headline}</p>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="font-medium">北极星</div>
+            <p className="mt-1 text-muted-foreground">{summary.northStar}</p>
           </div>
-          {output.situation.budgetTier === "none" ? (
-            <p className="text-muted-foreground">预算为 0，本方案已提示移除付费投放子流程，以自然流量为主。</p>
-          ) : null}
-          {output.situation.stage === "cold_start" ? (
-            <p className="text-muted-foreground">当前为冷启动阶段，建议先使用冷启动轻量版工作流。</p>
-          ) : null}
+          <div>
+            <div className="font-medium">本周 3 件事</div>
+            <ol className="mt-2 space-y-2">
+              {summary.priorities.map((priority, index) => (
+                <li key={priority.title} className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                    {index + 1}
+                  </span>
+                  <div>
+                    <span className="font-medium">{priority.title}</span>
+                    <span className="text-muted-foreground">：{priority.detail}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="rounded-lg border p-4">
+            <div className="font-medium">第一周行动</div>
+            <p className="mt-1 text-muted-foreground">{summary.firstWeekAction}</p>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="space-y-2">
-          <div className="flex items-center gap-2">
-            <CardTitle>本次优化重点</CardTitle>
-            <Badge>{EMPHASIS_LABELS[output.emphasis]}</Badge>
-          </div>
+        <CardHeader>
+          <CardTitle>7 天启动计划</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p>
-            {teamLabel}团队 · 优先解决{problemLabel}
-          </p>
-          <p className="text-muted-foreground">{EMPHASIS_FOCUS[output.primaryProblem]}</p>
+        <CardContent>
+          <ol className="space-y-3">
+            {sevenDayPlan.map((item) => (
+              <li key={item.days} className="flex gap-3 text-sm">
+                <span className="w-16 shrink-0 font-medium tabular-nums text-muted-foreground">
+                  {item.days}
+                </span>
+                <span className="text-muted-foreground">{item.action}</span>
+              </li>
+            ))}
+          </ol>
         </CardContent>
       </Card>
+
+      {injections.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>执行提示</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {injections.map((item) => (
+              <div key={item.title} className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-0.5 shrink-0">
+                  {item.title}
+                </Badge>
+                <p className="text-muted-foreground">{item.body}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -83,7 +143,9 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
           <div>
             <div className="font-medium">{scale.position}</div>
             <p className="text-muted-foreground">{scale.focus}</p>
-            <p className="mt-2 text-muted-foreground">企业规模：{companyScaleLabel}</p>
+            <p className="mt-2 text-muted-foreground">
+              企业规模：{getCompanyScaleLabel(output.company.companyScale)}
+            </p>
           </div>
           <div className="space-y-2">
             <div>
