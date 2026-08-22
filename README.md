@@ -2,7 +2,7 @@
 
 企业运营 SOP 智能生成平台。
 
-当前为 Hackathon MVP 第一阶段，实现从「多选运营方向」到「岗位工作纸」的基础链路，暂不接入 LLM、数据库、登录注册或用户历史记录。
+当前为 Hackathon MVP，实现从「多选运营方向」到「岗位工作纸」的基础链路，并可选接入 LLM 做定制建议。暂不含数据库、登录注册或用户历史记录。
 
 ## 技术栈
 
@@ -27,6 +27,18 @@ npm run dev
 npm run build
 npm start
 ```
+
+## AI 定制（可选）
+
+复制 `.env.example` 为 `.env` 并填写：
+
+```bash
+LLM_BASE_URL=https://aiping.cn/api/v1
+LLM_API_KEY=你的_key
+LLM_MODEL=deepseek-v4-pro
+```
+
+未配置 `LLM_API_KEY` 或调用失败时，结果页会自动回退到确定性建议，不会影响主流程。
 
 ## 目录结构
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { WorkflowPreview } from "@/components/workflow/WorkflowPreview";
 import { ResultActions } from "@/components/workflow/ResultActions";
+import { AiCustomize } from "@/components/workflow/AiCustomize";
 import { Button } from "@/components/ui/button";
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
 import { toMarkdown } from "@/lib/workflow-enrichment";
@@ -107,9 +108,11 @@ export default async function ResultPage({
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">你的岗位工作纸</h1>
           <p className="text-muted-foreground">
-            当前已验证「问卷 → 多选映射 → 岗位工作纸」链路，LLM SOP 生成将在第二阶段接入。
+            先看执行总览与 7 天启动计划，再使用 AI 生成更贴合你企业的定制建议。
           </p>
         </div>
+
+        <AiCustomize output={output} />
 
         <WorkflowPreview output={output} />
       </div>
