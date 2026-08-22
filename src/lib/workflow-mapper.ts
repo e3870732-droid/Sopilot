@@ -1,18 +1,41 @@
 import { workflowRegistry } from "@/data/workflows/registry";
-import type { UserProfile } from "@/types/user-profile";
-import type { MappingResult } from "@/types/workflow";
-import { customizeWorkflow } from "./workflow-customizer";
+import { findSubcategory } from "@/data/subcategories";
+import type { OperationType } from "@/types/user-profile";
+import type { QuestionnaireSelection, RoleWorksheet, SopOutput, SubFlow } from "@/types/workflow";
+import { PROBLEM_EMPHASIS } from "./workflow-customizer";
 
-export function mapUserProfileToWorkflow(profile: UserProfile): MappingResult {
-  const workflow = workflowRegistry[profile.operationType];
+function getWorksheet(operationType: OperationType): RoleWorksheet {
+  const worksheet = workflowRegistry[operationType];
 
-  if (!workflow) {
-    throw new Error(`未找到运营类型对应的 Workflow Template: ${profile.operationType}`);
+  if (!worksheet) {
+    throw new Error(`未找到运营类型对应的岗位工作纸: ${operationType}`);
   }
 
+  return worksheet;
+}
+
+export function mapSelectionToSop(selection: QuestionnaireSelection): SopOutput {
+  const overview = selection.operationTypes.map((operationType) => getWorksheet(operationType));
+
+  const subFlows: SubFlow[] = selection.subcategoryIds
+    .map((id) => {
+      const subcategory = findSubcategory(id);
+      if (!subcategory) {
+        return null;
+      }
+
+      return {
+        subcategory,
+        worksheet: getWorksheet(subcategory.operationType)
+      };
+    })
+    .filter((item): item is SubFlow => item !== null);
+
   return {
-    templateId: workflow.id,
-    workflow,
-    customization: customizeWorkflow(workflow, profile.teamSize, profile.primaryProblem)
+    teamSize: selection.teamSize,
+    primaryProblem: selection.primaryProblem,
+    emphasis: PROBLEM_EMPHASIS[selection.primaryProblem],
+    overview,
+    subFlows
   };
 }

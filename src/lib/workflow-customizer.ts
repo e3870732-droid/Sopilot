@@ -1,12 +1,5 @@
 import type { PrimaryEmphasis, PrimaryProblem, TeamSize } from "@/types/user-profile";
-import type { WorkflowCustomization, WorkflowTemplate } from "@/types/workflow";
-
-interface VariantRule {
-  roles: string[];
-  checkpoints: string[];
-  metrics: string[];
-  highlights: string[];
-}
+import type { ScaleAdaptation } from "@/types/workflow";
 
 export const PROBLEM_EMPHASIS: Record<PrimaryProblem, PrimaryEmphasis> = {
   unclear_process: "strategy_and_process",
@@ -22,80 +15,40 @@ export const EMPHASIS_LABELS: Record<PrimaryEmphasis, string> = {
   data_review: "数据复盘"
 };
 
-const TEAM_RULES: Record<TeamSize, VariantRule> = {
+export const EMPHASIS_FOCUS: Record<PrimaryProblem, string> = {
+  unclear_process: "强化每个阶段的入口/出口定义与先后顺序",
+  low_efficiency: "强化时间要求、减少审批、模板化与批量处理",
+  frequent_errors: "强化检查清单、Review 节点、风险点与异常处理",
+  lack_of_metrics: "强化 KPI、复盘频率与数据反馈机制"
+};
+
+export const TEAM_SCALE_ADAPTATION: Record<TeamSize, ScaleAdaptation> = {
   solo: {
-    roles: ["单人全流程负责"],
-    checkpoints: ["Checklist 自查"],
-    metrics: ["核心产出数量"],
-    highlights: ["Checklist 自查"]
+    position: "一个人全流程负责",
+    focus: "重点是不漏事、不返工",
+    add: "Checklist 自查、模板复用",
+    remove: "非必要审批与复杂交接"
   },
   small_team: {
-    roles: ["明确 Owner"],
-    checkpoints: ["任务交接确认"],
-    metrics: ["关键节点完成率"],
-    highlights: ["角色分工", "任务交接"]
+    position: "2–3 人简单分工",
+    focus: "明确每个阶段的 Owner 与交接界面",
+    add: "阶段 Owner、任务交接确认",
+    remove: "复杂层级与多级审批"
   },
   structured_team: {
-    roles: ["岗位分工", "Reviewer"],
-    checkpoints: ["Review 节点", "交接标准"],
-    metrics: ["阶段验收通过率"],
-    highlights: ["岗位分工", "Review 节点"]
+    position: "4–8 人明确岗位分工",
+    focus: "统一流程节点与验收口径",
+    add: "Review 节点、交接标准、阶段验收",
+    remove: "一人多阶段的模糊边界"
   },
   large_team: {
-    roles: ["Owner", "Reviewer", "Approver"],
-    checkpoints: ["审批节点", "SLA/汇报机制"],
-    metrics: ["SLA 达成率", "汇报频率"],
-    highlights: ["Owner / Reviewer / Approver", "审批与汇报机制"]
+    position: "8 人以上层级协作",
+    focus: "建立审批链与问责标准",
+    add: "Owner / Reviewer / Approver、SLA 与汇报机制",
+    remove: "无审批的临时口头交接"
   }
 };
 
-const PROBLEM_RULES: Record<PrimaryProblem, VariantRule> = {
-  unclear_process: {
-    roles: [],
-    checkpoints: ["流程顺序", "阶段入口与出口"],
-    metrics: ["阶段验收标准"],
-    highlights: ["流程顺序", "阶段入口与出口"]
-  },
-  low_efficiency: {
-    roles: [],
-    checkpoints: ["时间节点", "模板化与批量处理"],
-    metrics: ["任务耗时"],
-    highlights: ["时间要求", "模板化与批量处理"]
-  },
-  frequent_errors: {
-    roles: ["Reviewer"],
-    checkpoints: ["关键检查清单", "风险节点", "异常处理"],
-    metrics: [],
-    highlights: ["检查清单", "Review", "风险节点", "异常处理"]
-  },
-  lack_of_metrics: {
-    roles: [],
-    checkpoints: ["数据反馈机制"],
-    metrics: ["核心 KPI", "复盘频率"],
-    highlights: ["核心 KPI", "复盘频率", "数据反馈"]
-  }
-};
-
-function unique(values: string[]): string[] {
-  return Array.from(new Set(values));
-}
-
-export function customizeWorkflow(
-  workflow: WorkflowTemplate,
-  teamSize: TeamSize,
-  primaryProblem: PrimaryProblem
-): WorkflowCustomization {
-  const emphasis = PROBLEM_EMPHASIS[primaryProblem];
-  const teamRule = TEAM_RULES[teamSize];
-  const problemRule = PROBLEM_RULES[primaryProblem];
-
-  return {
-    teamMode: teamSize,
-    emphasis,
-    emphasisLabel: EMPHASIS_LABELS[emphasis],
-    roles: unique([...teamRule.roles, ...problemRule.roles]),
-    checkpoints: unique([...teamRule.checkpoints, ...problemRule.checkpoints]),
-    metrics: unique([...teamRule.metrics, ...problemRule.metrics]),
-    highlights: unique([...teamRule.highlights, ...problemRule.highlights])
-  };
+export function getScaleAdaptation(teamSize: TeamSize): ScaleAdaptation {
+  return TEAM_SCALE_ADAPTATION[teamSize];
 }

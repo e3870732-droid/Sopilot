@@ -1,69 +1,83 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOptionLabel } from "@/data/questions";
-import type { UserProfile } from "@/types/user-profile";
-import type { MappingResult } from "@/types/workflow";
-import { WorkflowStageCard } from "./WorkflowStageCard";
+import { EMPHASIS_FOCUS, EMPHASIS_LABELS, getScaleAdaptation } from "@/lib/workflow-customizer";
+import type { SopOutput } from "@/types/workflow";
+import { RoleWorksheetCard } from "./RoleWorksheetCard";
 
 interface WorkflowPreviewProps {
-  profile: UserProfile;
-  result: MappingResult;
+  output: SopOutput;
 }
 
-export function WorkflowPreview({ profile, result }: WorkflowPreviewProps) {
-  const operationLabel = getOptionLabel("operationType", profile.operationType);
-  const teamLabel = getOptionLabel("teamSize", profile.teamSize);
-  const problemLabel = getOptionLabel("primaryProblem", profile.primaryProblem);
+export function WorkflowPreview({ output }: WorkflowPreviewProps) {
+  const scale = getScaleAdaptation(output.teamSize);
+  const teamLabel = getOptionLabel("teamSize", output.teamSize);
+  const problemLabel = getOptionLabel("primaryProblem", output.primaryProblem);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Card>
-        <CardHeader>
-          <CardTitle>你的情况</CardTitle>
-          <CardDescription>
-            {operationLabel} · {teamLabel}团队 · 优先解决{problemLabel}
-          </CardDescription>
+        <CardHeader className="space-y-2">
+          <div className="flex items-center gap-2">
+            <CardTitle>本次优化重点</CardTitle>
+            <Badge>{EMPHASIS_LABELS[output.emphasis]}</Badge>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">系统将重点为你建立</div>
-            <p className="mt-1">{result.customization.highlights.join("、")}流程</p>
-          </div>
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">匹配结果</div>
-            <dl className="mt-2 grid gap-3 text-sm sm:grid-cols-3">
-              <div>
-                <dt className="text-muted-foreground">Workflow</dt>
-                <dd className="mt-1 font-mono text-xs">{result.templateId}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Team Variant</dt>
-                <dd className="mt-1">
-                  <Badge variant="secondary">{result.customization.teamMode}</Badge>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Emphasis</dt>
-                <dd className="mt-1">
-                  <Badge>{result.customization.emphasis}</Badge>
-                </dd>
-              </div>
-            </dl>
-          </div>
+        <CardContent className="space-y-2 text-sm">
+          <p>
+            {teamLabel}团队 · 优先解决{problemLabel}
+          </p>
+          <p className="text-muted-foreground">{EMPHASIS_FOCUS[output.primaryProblem]}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Workflow Skeleton</CardTitle>
-          <CardDescription>{result.workflow.name}</CardDescription>
+          <CardTitle>团队规模适配</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {result.workflow.stages.map((stage, index) => (
-            <WorkflowStageCard key={stage.id} index={index + 1} stage={stage} />
-          ))}
+        <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
+          <div>
+            <div className="font-medium">{scale.position}</div>
+            <p className="text-muted-foreground">{scale.focus}</p>
+          </div>
+          <div className="space-y-2">
+            <div>
+              <span className="font-medium">应增加：</span>
+              {scale.add}
+            </div>
+            <div>
+              <span className="font-medium">先删掉：</span>
+              {scale.remove}
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-tight">总纲</h2>
+        <div className="space-y-6">
+          {output.overview.map((worksheet) => (
+            <RoleWorksheetCard key={worksheet.id} worksheet={worksheet} />
+          ))}
+        </div>
+      </section>
+
+      {output.subFlows.length > 0 ? (
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight">子流程</h2>
+          <div className="space-y-6">
+            {output.subFlows.map((subFlow) => (
+              <div key={subFlow.subcategory.id} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">{subFlow.subcategory.name}</h3>
+                  <Badge variant="outline">{subFlow.worksheet.name}</Badge>
+                </div>
+                <RoleWorksheetCard worksheet={subFlow.worksheet} />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

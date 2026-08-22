@@ -2,7 +2,7 @@
 
 企业运营 SOP 智能生成平台。
 
-当前为 Hackathon MVP 第一阶段，只实现从问卷到 Workflow Mapping 的基础链路，暂不接入 LLM、数据库、登录注册或用户历史记录。
+当前为 Hackathon MVP 第一阶段，实现从「多选运营方向」到「岗位工作纸」的基础链路，暂不接入 LLM、数据库、登录注册或用户历史记录。
 
 ## 技术栈
 
@@ -42,7 +42,9 @@ src/
 │   ├── workflow/
 │   └── ui/
 ├── data/
+│   ├── categories.ts
 │   ├── questions.ts
+│   ├── subcategories.ts
 │   └── workflows/
 ├── lib/
 │   ├── workflow-mapper.ts
@@ -53,27 +55,29 @@ src/
 ## 数据流
 
 ```text
-Questionnaire
-→ UserProfile
+Questionnaire（8 大类 + 子类多选）
+→ QuestionnaireSelection
 → Mapping Engine
 → Workflow Registry
-→ Mapping Result
+→ Role Worksheet（总纲 + 子流程）
 ```
 
 ## Mapping 规则
 
-- Layer 1：`operationType` 决定使用哪个 Workflow Template。
-- Layer 2：`teamSize` 决定 Team Variant，影响 roles、checkpoints、metrics。
-- Layer 3：`primaryProblem` 决定 Workflow Emphasis。
+- Layer 1：多选 `operationType` 决定输出哪些岗位工作纸总纲。
+- Layer 2：多选子类决定输出哪些子流程，子流程先复用所属大类工作流。
+- Layer 3：`teamSize` 决定团队规模适配（4 档）。
+- Layer 4：`primaryProblem` 决定本次优化重点。
 
 ## 当前范围
 
 第一阶段已完成：
 
-- 三步用户问卷
-- 结构化 `UserProfile`
-- 6 个静态 Workflow Template 与 Registry
-- 确定性 Mapping Engine 与 Customizer
+- 8 大类多选 + 子类多选问卷
+- 团队规模与优先问题
+- 8 个岗位工作纸与子类 Registry
+- 确定性 Mapping Engine
+- 统一「岗位工作纸」输出结构
 - 生成前确认页与 Debug Preview 页
 
 下一阶段建议：

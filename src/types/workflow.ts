@@ -1,46 +1,63 @@
 import type { OperationType, PrimaryEmphasis, PrimaryProblem, TeamSize } from "./user-profile";
 
-export interface WorkflowStage {
-  id: string;
-  name: string;
-  description: string;
-  objective?: string;
-  defaultRoles?: string[];
-  checkpoints?: string[];
-  metrics?: string[];
-  exceptionHandling?: string[];
-}
-
-export interface TeamVariantConfig {
-  label: string;
-  description: string;
-  roles?: string[];
-  checkpoints?: string[];
-  metrics?: string[];
-}
-
-export interface WorkflowTemplate {
+export interface Subcategory {
   id: string;
   operationType: OperationType;
   name: string;
-  description: string;
-  stages: WorkflowStage[];
-  supportedProblems: PrimaryProblem[];
-  teamVariants?: Partial<Record<TeamSize, TeamVariantConfig>>;
 }
 
-export interface WorkflowCustomization {
-  teamMode: TeamSize;
+export interface WorksheetStep {
+  title: string;
+  action: string;
+  owner?: string;
+  handoff?: string;
+  proof: string;
+}
+
+export interface CadenceItem {
+  rhythm: string;
+  actions: string;
+}
+
+export interface ScaleAdaptation {
+  position: string;
+  focus: string;
+  add: string;
+  remove: string;
+}
+
+export interface RoleWorksheet {
+  id: string;
+  operationType: OperationType;
+  category: string;
+  name: string;
+  northStar: string;
+  output: string;
+  cycle: string;
+  steps: WorksheetStep[];
+  cadence: CadenceItem[];
+  deliverables: string[];
+  collaboration: string[];
+  kpis: string[];
+  guardrails: string[];
+}
+
+export interface SubFlow {
+  subcategory: Subcategory;
+  worksheet: RoleWorksheet;
+}
+
+export interface QuestionnaireSelection {
+  operationTypes: OperationType[];
+  subcategoryIds: string[];
+  teamSize: TeamSize;
+  primaryProblem: PrimaryProblem;
+}
+
+export interface SopOutput {
+  teamSize: TeamSize;
+  primaryProblem: PrimaryProblem;
   emphasis: PrimaryEmphasis;
-  emphasisLabel: string;
-  roles: string[];
-  checkpoints: string[];
-  metrics: string[];
-  highlights: string[];
-}
-
-export interface MappingResult {
-  templateId: string;
-  workflow: WorkflowTemplate;
-  customization: WorkflowCustomization;
+  overview: RoleWorksheet[];
+  subFlows: SubFlow[];
 }

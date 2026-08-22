@@ -1,16 +1,21 @@
-import type { OperationType, WorkflowTemplate } from "@/types";
+import type { OperationType } from "@/types/user-profile";
+import type { RoleWorksheet } from "@/types/workflow";
+import { marketWorkflow } from "./market";
 import { contentWorkflow } from "./content";
-import { ecommerceWorkflow } from "./ecommerce";
 import { userWorkflow } from "./user";
-import { growthWorkflow } from "./growth";
 import { eventWorkflow } from "./event";
+import { growthWorkflow } from "./growth";
+import { ecommerceWorkflow } from "./ecommerce";
 import { productWorkflow } from "./product";
+import { enterpriseWorkflow } from "./enterprise";
 
-export const workflowRegistry: Record<OperationType, WorkflowTemplate> = {
+export const workflowRegistry: Record<OperationType, RoleWorksheet> = {
+  market_operations: marketWorkflow,
   content_operations: contentWorkflow,
-  ecommerce_operations: ecommerceWorkflow,
   user_operations: userWorkflow,
-  growth_operations: growthWorkflow,
   event_operations: eventWorkflow,
-  product_operations: productWorkflow
+  growth_operations: growthWorkflow,
+  ecommerce_operations: ecommerceWorkflow,
+  product_operations: productWorkflow,
+  enterprise_operations: enterpriseWorkflow
 };

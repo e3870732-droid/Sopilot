@@ -1,10 +1,12 @@
 export const OPERATION_TYPES = [
+  "market_operations",
   "content_operations",
-  "ecommerce_operations",
   "user_operations",
-  "growth_operations",
   "event_operations",
-  "product_operations"
+  "growth_operations",
+  "ecommerce_operations",
+  "product_operations",
+  "enterprise_operations"
 ] as const;
 
 export const TEAM_SIZES = ["solo", "small_team", "structured_team", "large_team"] as const;

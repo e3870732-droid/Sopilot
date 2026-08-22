@@ -12,7 +12,7 @@ export default function HomePage() {
             把团队经验，变成标准流程
           </h1>
           <p className="mx-auto max-w-md text-muted-foreground">
-            回答 3 个问题，30 秒内获得适配你团队的标准运营工作流。
+            选择你的运营方向，快速获得适配团队的岗位工作纸与标准流程。
           </p>
         </div>
         <Button asChild size="lg">
