@@ -2,16 +2,17 @@ import { NextResponse } from "next/server";
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
 import { getBudgetTierLabel, getPlatformLabel, getStageLabel } from "@/data/situation";
-import { getContextInjections, getExecutiveSummary } from "@/lib/workflow-enrichment";
+import { buildFallbackOverview, buildFallbackRole } from "@/lib/sop-report";
+import type { OperationType } from "@/types/user-profile";
 import type { SopOutput } from "@/types/workflow";
 
 export const runtime = "nodejs";
 
-interface GenerateResponse {
-  source: "ai" | "fallback";
-  executiveBrief: string;
-  weeklyPlan: string[];
-  risks: string[];
+type GenerateTarget = { kind: "overview" } | { kind: "role"; operationType: OperationType };
+
+interface GenerateRequest {
+  output: SopOutput;
+  target: GenerateTarget;
 }
 
 const SYSTEM_PROMPT = `你是一名企业运营 SOP 顾问。你擅长把结构化运营流程改写成贴合企业实际情况、可直接执行的行动建议。
@@ -29,10 +30,8 @@ function getProblemLabel(output: SopOutput): string {
   return getOptionLabel("primaryProblem", output.primaryProblem);
 }
 
-function buildUserPrompt(output: SopOutput): string {
+function buildContextLines(output: SopOutput): string[] {
   const lines: string[] = [];
-  lines.push("请基于以下信息，为这家企业生成定制化 SOP 建议。");
-  lines.push("");
   lines.push("【企业】");
   lines.push(`- 行业：${getIndustryLabel(output.company.industry)}`);
   lines.push(`- 业务模式：${output.company.businessModel}`);
@@ -46,27 +45,53 @@ function buildUserPrompt(output: SopOutput): string {
   lines.push("");
   lines.push("【团队】");
   lines.push(`- 参与人数：${getOptionLabel("teamSize", output.teamSize)}`);
+  return lines;
+}
+
+function buildOverviewPrompt(output: SopOutput): string {
+  const lines = buildContextLines(output);
   lines.push("");
   lines.push("【已选岗位工作纸】");
   output.overview.forEach((worksheet) => {
     lines.push(`- ${worksheet.name}：${worksheet.northStar}`);
     lines.push(`  流程：${worksheet.steps.map((step) => step.title).join(" → ")}`);
   });
-  if (output.subFlows.length > 0) {
-    lines.push("");
-    lines.push("【已选子类】");
-    output.subFlows.forEach((subFlow) => {
-      lines.push(`- ${subFlow.subcategory.name}（复用${subFlow.worksheet.name}工作流）`);
-    });
-  }
   lines.push("");
-  lines.push("请严格输出以下 JSON 结构：");
+  lines.push("请输出这份报告的全局执行建议，严格按以下 JSON 结构：");
   lines.push("{");
   lines.push('  "executiveBrief": "150 字以内的执行简报",');
   lines.push('  "weeklyPlan": ["本周行动 1", "本周行动 2", "本周行动 3"],');
   lines.push('  "risks": ["风险或提醒 1", "风险或提醒 2"]');
   lines.push("}");
+  return lines.join("\n");
+}
 
+function buildRolePrompt(output: SopOutput, operationType: OperationType): string {
+  const worksheet = output.overview.find((item) => item.operationType === operationType);
+  const subFlows = output.subFlows.filter(
+    (item) => item.subcategory.operationType === operationType
+  );
+
+  const lines = buildContextLines(output);
+  lines.push("");
+  lines.push("【当前要生成的岗位】");
+  if (worksheet) {
+    lines.push(`- 岗位：${worksheet.name}`);
+    lines.push(`- 北极星：${worksheet.northStar}`);
+    lines.push(`- 流程：${worksheet.steps.map((step) => step.title).join(" → ")}`);
+    lines.push(`- 关键指标：${worksheet.kpis.join("、")}`);
+  }
+  if (subFlows.length > 0) {
+    lines.push(`- 涉及子类：${subFlows.map((item) => item.subcategory.name).join("、")}`);
+  }
+  lines.push("");
+  lines.push("请针对该岗位输出定制建议，严格按以下 JSON 结构：");
+  lines.push("{");
+  lines.push('  "roleBrief": "该岗位的定制定位，120 字以内",');
+  lines.push('  "priorityTasks": ["本阶段重点任务 1", "重点任务 2", "重点任务 3"],');
+  lines.push('  "checklist": ["关键检查清单 1", "检查清单 2"],');
+  lines.push('  "risks": ["该岗位风险或提醒 1", "风险或提醒 2"]');
+  lines.push("}");
   return lines.join("\n");
 }
 
@@ -89,87 +114,125 @@ function extractJson(text: string): Record<string, unknown> {
   }
 }
 
-function toGenerateResponse(parsed: Record<string, unknown>): GenerateResponse {
-  const executiveBrief =
-    typeof parsed.executiveBrief === "string" && parsed.executiveBrief.trim()
-      ? parsed.executiveBrief.trim()
-      : "";
-  const weeklyPlan = Array.isArray(parsed.weeklyPlan)
-    ? parsed.weeklyPlan.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-    : [];
-  const risks = Array.isArray(parsed.risks)
-    ? parsed.risks.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-    : [];
-
-  return { source: "ai", executiveBrief, weeklyPlan, risks };
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
 }
 
-function deterministicFallback(output: SopOutput): GenerateResponse {
-  const summary = getExecutiveSummary(output);
-  const injections = getContextInjections(output);
+function toStringValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
 
-  return {
-    source: "fallback",
-    executiveBrief: `${summary.headline}。北极星：${summary.northStar}`,
-    weeklyPlan: summary.priorities.map((priority) => `${priority.title}：${priority.detail}`),
-    risks: injections.map((item) => `${item.title}：${item.body}`)
+async function callModel(
+  apiKey: string,
+  model: string,
+  baseUrl: string,
+  prompt: string
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.6
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`模型请求失败（${response.status}）：${errorText.slice(0, 200)}`);
+  }
+
+  const data = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
   };
+  const content = data.choices?.[0]?.message?.content ?? "";
+  if (!content.trim()) {
+    throw new Error("模型返回内容为空");
+  }
+
+  return extractJson(content);
 }
 
 export async function POST(request: Request) {
-  let output: SopOutput;
+  let body: GenerateRequest;
   try {
-    output = (await request.json()) as SopOutput;
+    body = (await request.json()) as GenerateRequest;
   } catch {
     return NextResponse.json({ error: "无效的请求体" }, { status: 400 });
   }
 
-  if (!output || !Array.isArray(output.overview) || output.overview.length === 0) {
+  const { output, target } = body;
+  if (!output || !Array.isArray(output.overview) || output.overview.length === 0 || !target) {
     return NextResponse.json({ error: "缺少有效的问卷输出" }, { status: 400 });
   }
 
   const apiKey = process.env.LLM_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(deterministicFallback(output));
-  }
-
   const baseUrl = (process.env.LLM_BASE_URL || "https://aiping.cn/api/v1").replace(/\/$/, "");
   const model = process.env.LLM_MODEL || "deepseek-v4-pro";
 
+  if (target.kind === "overview") {
+    if (!apiKey) {
+      return NextResponse.json(buildFallbackOverview(output));
+    }
+
+    try {
+      const parsed = await callModel(apiKey, model, baseUrl, buildOverviewPrompt(output));
+      const overview = {
+        source: "ai" as const,
+        executiveBrief: toStringValue(parsed.executiveBrief),
+        weeklyPlan: toStringArray(parsed.weeklyPlan),
+        risks: toStringArray(parsed.risks)
+      };
+
+      if (!overview.executiveBrief && overview.weeklyPlan.length === 0) {
+        return NextResponse.json(buildFallbackOverview(output));
+      }
+
+      return NextResponse.json(overview);
+    } catch (error) {
+      console.error("生成执行总览失败：", error);
+      return NextResponse.json(buildFallbackOverview(output));
+    }
+  }
+
+  const worksheet = output.overview.find((item) => item.operationType === target.operationType);
+  if (!worksheet) {
+    return NextResponse.json({ error: "未找到对应岗位" }, { status: 400 });
+  }
+
+  if (!apiKey) {
+    return NextResponse.json(buildFallbackRole(output, worksheet));
+  }
+
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: buildUserPrompt(output) }
-        ],
-        temperature: 0.6
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("LLM 请求失败：", response.status, errorText);
-      return NextResponse.json(deterministicFallback(output));
-    }
-
-    const data = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
+    const parsed = await callModel(apiKey, model, baseUrl, buildRolePrompt(output, target.operationType));
+    const role = {
+      source: "ai" as const,
+      operationType: target.operationType,
+      name: worksheet.name,
+      roleBrief: toStringValue(parsed.roleBrief),
+      priorityTasks: toStringArray(parsed.priorityTasks),
+      checklist: toStringArray(parsed.checklist),
+      risks: toStringArray(parsed.risks)
     };
-    const content = data.choices?.[0]?.message?.content ?? "";
-    if (!content.trim()) {
-      return NextResponse.json(deterministicFallback(output));
+
+    if (!role.roleBrief && role.priorityTasks.length === 0) {
+      return NextResponse.json(buildFallbackRole(output, worksheet));
     }
 
-    return NextResponse.json(toGenerateResponse(extractJson(content)));
+    return NextResponse.json(role);
   } catch (error) {
-    console.error("LLM 生成失败：", error);
-    return NextResponse.json(deterministicFallback(output));
+    console.error(`生成岗位「${worksheet.name}」失败：`, error);
+    return NextResponse.json(buildFallbackRole(output, worksheet));
   }
 }
