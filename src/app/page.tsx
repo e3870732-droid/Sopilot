@@ -8,10 +8,10 @@ export default function HomePage() {
       <div className="w-full max-w-xl space-y-6 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Sopilot</p>
         <div className="space-y-3">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="whitespace-nowrap text-4xl font-semibold tracking-tight sm:text-5xl">
             把团队经验，变成标准流程
           </h1>
-          <p className="mx-auto max-w-md text-muted-foreground">
+          <p className="mx-auto max-w-md whitespace-nowrap text-muted-foreground">
             选择你的运营方向，快速获得适配团队的岗位工作纸与标准流程。
           </p>
         </div>

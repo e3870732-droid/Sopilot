@@ -9,7 +9,7 @@ export const OPERATION_TYPES = [
   "enterprise_operations"
 ] as const;
 
-export const TEAM_SIZES = ["solo", "small_team", "structured_team", "large_team"] as const;
+export const TEAM_SIZES = ["solo", "small_team", "mid_team", "large_team", "xlarge_team"] as const;
 
 export const PRIMARY_PROBLEMS = [
   "unclear_process",

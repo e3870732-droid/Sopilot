@@ -23,9 +23,10 @@ export const questions: Question[] = [
     subtitle: "这里只统计参与所选工作的团队成员，不是整个公司的员工人数。",
     options: [
       { id: "solo", label: "1 人", description: "我自己基本负责全部工作" },
-      { id: "small_team", label: "2–3 人", description: "有简单分工，但经常互相补位" },
-      { id: "structured_team", label: "4–8 人", description: "已经有比较明确的岗位分工" },
-      { id: "large_team", label: "8 人以上", description: "已经存在负责人、执行人员和审批关系" }
+      { id: "small_team", label: "2–5 人", description: "有简单分工，但经常互相补位" },
+      { id: "mid_team", label: "6–10 人", description: "已经有比较明确的岗位分工" },
+      { id: "large_team", label: "11–20 人", description: "已经形成负责人、执行人员和审批关系" },
+      { id: "xlarge_team", label: "20 人以上", description: "多个团队协作，流程与层级更复杂" }
     ]
   },
   {

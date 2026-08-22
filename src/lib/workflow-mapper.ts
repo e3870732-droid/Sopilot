@@ -31,11 +31,22 @@ export function mapSelectionToSop(selection: QuestionnaireSelection): SopOutput 
     })
     .filter((item): item is SubFlow => item !== null);
 
+  const customSubFlows: SubFlow[] = selection.customSubcategories.map((custom) => ({
+    subcategory: {
+      id: `${custom.operationType}_custom`,
+      operationType: custom.operationType,
+      name: custom.name
+    },
+    worksheet: getWorksheet(custom.operationType)
+  }));
+
   return {
+    company: selection.company,
+    situation: selection.situation,
     teamSize: selection.teamSize,
     primaryProblem: selection.primaryProblem,
     emphasis: PROBLEM_EMPHASIS[selection.primaryProblem],
     overview,
-    subFlows
+    subFlows: [...subFlows, ...customSubFlows]
   };
 }

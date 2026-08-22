@@ -1,7 +1,14 @@
 import type { OperationType, PrimaryEmphasis, PrimaryProblem, TeamSize } from "./user-profile";
+import type { CompanyProfile } from "./company";
+import type { SituationProfile } from "./situation";
 
 export interface Subcategory {
   id: string;
+  operationType: OperationType;
+  name: string;
+}
+
+export interface CustomSubcategory {
   operationType: OperationType;
   name: string;
 }
@@ -48,13 +55,18 @@ export interface SubFlow {
 }
 
 export interface QuestionnaireSelection {
+  company: CompanyProfile;
+  situation: SituationProfile;
   operationTypes: OperationType[];
   subcategoryIds: string[];
+  customSubcategories: CustomSubcategory[];
   teamSize: TeamSize;
   primaryProblem: PrimaryProblem;
 }
 
 export interface SopOutput {
+  company: CompanyProfile;
+  situation: SituationProfile;
   teamSize: TeamSize;
   primaryProblem: PrimaryProblem;
   emphasis: PrimaryEmphasis;

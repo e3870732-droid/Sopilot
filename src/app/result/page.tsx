@@ -4,7 +4,10 @@ import { WorkflowPreview } from "@/components/workflow/WorkflowPreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
+import { isCompanyScale, isIndustry } from "@/types/company";
+import { isBudgetTier, isPlatform, isStage } from "@/types/situation";
 import { isOperationType, isPrimaryProblem, isTeamSize } from "@/types/user-profile";
+import type { CustomSubcategory } from "@/types/workflow";
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -26,10 +29,41 @@ export default async function ResultPage({
   const subcategoryIds = readParams(params, "subcategoryId");
   const teamSizeValues = readParams(params, "teamSize");
   const problemValues = readParams(params, "primaryProblem");
+  const industryValues = readParams(params, "industry");
+  const businessModelValues = readParams(params, "businessModel");
+  const companyScaleValues = readParams(params, "companyScale");
+  const customTypeValues = readParams(params, "customSubcategoryType");
+  const customNameValues = readParams(params, "customSubcategoryName");
+  const stageValues = readParams(params, "stage");
+  const platformValues = readParams(params, "platform");
+  const budgetValues = readParams(params, "budgetTier");
   const teamSize = teamSizeValues.find(isTeamSize);
   const primaryProblem = problemValues.find(isPrimaryProblem);
+  const industry = industryValues.find(isIndustry);
+  const companyScale = companyScaleValues.find(isCompanyScale);
+  const businessModel = businessModelValues[0]?.trim();
+  const stage = stageValues.find(isStage);
+  const platforms = platformValues.filter(isPlatform);
+  const budgetTier = budgetValues.find(isBudgetTier);
 
-  if (operationTypes.length === 0 || !teamSize || !primaryProblem) {
+  const customSubcategories = customTypeValues
+    .map((operationType, index) => ({
+      operationType,
+      name: customNameValues[index]?.trim() ?? ""
+    }))
+    .filter((item): item is CustomSubcategory => isOperationType(item.operationType) && item.name.length > 0);
+
+  if (
+    operationTypes.length === 0 ||
+    !teamSize ||
+    !primaryProblem ||
+    !industry ||
+    !companyScale ||
+    !businessModel ||
+    !stage ||
+    platforms.length === 0 ||
+    !budgetTier
+  ) {
     return (
       <main className="flex min-h-screen items-center justify-center p-6">
         <div className="w-full max-w-md space-y-4 text-center">
@@ -44,8 +78,19 @@ export default async function ResultPage({
   }
 
   const output = mapSelectionToSop({
+    company: {
+      industry,
+      businessModel,
+      companyScale
+    },
+    situation: {
+      stage,
+      platforms,
+      budgetTier
+    },
     operationTypes,
     subcategoryIds,
+    customSubcategories,
     teamSize,
     primaryProblem
   });

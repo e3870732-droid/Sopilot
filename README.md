@@ -55,7 +55,7 @@ src/
 ## 数据流
 
 ```text
-Questionnaire（8 大类 + 子类多选）
+Questionnaire（企业画像 → 岗位职责 → 团队规模 → 现状与卡点）
 → QuestionnaireSelection
 → Mapping Engine
 → Workflow Registry
@@ -64,17 +64,19 @@ Questionnaire（8 大类 + 子类多选）
 
 ## Mapping 规则
 
+- 前置输入：`company`（行业 / 业务模式 / 企业规模）与 `situation`（阶段 / 平台 / 预算）决定输出上下文。
 - Layer 1：多选 `operationType` 决定输出哪些岗位工作纸总纲。
-- Layer 2：多选子类决定输出哪些子流程，子流程先复用所属大类工作流。
-- Layer 3：`teamSize` 决定团队规模适配（4 档）。
+- Layer 2：多选子类（含自定义子类）决定输出哪些子流程，子流程先复用所属大类工作流。
+- Layer 3：`teamSize` 决定团队规模适配（5 档）。
 - Layer 4：`primaryProblem` 决定本次优化重点。
 
 ## 当前范围
 
 第一阶段已完成：
 
-- 8 大类多选 + 子类多选问卷
-- 团队规模与优先问题
+- 企业画像页（行业 / 业务模式 / 企业规模）
+- 8 大类多选 + 子类多选 + 每大类自定义子类问卷
+- 团队规模（5 档）与现状卡点（阶段 / 平台 / 预算 / 首要问题）
 - 8 个岗位工作纸与子类 Registry
 - 确定性 Mapping Engine
 - 统一「岗位工作纸」输出结构

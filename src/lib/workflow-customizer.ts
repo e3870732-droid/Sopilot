@@ -30,22 +30,28 @@ export const TEAM_SCALE_ADAPTATION: Record<TeamSize, ScaleAdaptation> = {
     remove: "非必要审批与复杂交接"
   },
   small_team: {
-    position: "2–3 人简单分工",
+    position: "2–5 人简单分工",
     focus: "明确每个阶段的 Owner 与交接界面",
     add: "阶段 Owner、任务交接确认",
     remove: "复杂层级与多级审批"
   },
-  structured_team: {
-    position: "4–8 人明确岗位分工",
+  mid_team: {
+    position: "6–10 人明确岗位分工",
     focus: "统一流程节点与验收口径",
     add: "Review 节点、交接标准、阶段验收",
     remove: "一人多阶段的模糊边界"
   },
   large_team: {
-    position: "8 人以上层级协作",
+    position: "11–20 人层级协作",
     focus: "建立审批链与问责标准",
     add: "Owner / Reviewer / Approver、SLA 与汇报机制",
     remove: "无审批的临时口头交接"
+  },
+  xlarge_team: {
+    position: "20 人以上多团队协作",
+    focus: "跨团队对齐与标准化治理",
+    add: "跨团队 SLA、例会机制、资产库与权限",
+    remove: "各自维护的孤立流程"
   }
 };
 
