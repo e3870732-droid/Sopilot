@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GenerateReportButton } from "@/components/report/GenerateReportButton";
+import { ResumeReportButton } from "@/components/report/ResumeReportButton";
 import { ResultActions } from "@/components/workflow/ResultActions";
 import { WorkflowPreview } from "@/components/workflow/WorkflowPreview";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,10 @@ export default async function ResultPage({
           <p className="text-muted-foreground">先预览确定性工作纸，确认后生成完整 SOP 报告。</p>
         </div>
 
-        <GenerateReportButton />
+        <div className="flex flex-wrap gap-3">
+          <GenerateReportButton />
+          <ResumeReportButton output={output} />
+        </div>
 
         <WorkflowPreview output={output} />
       </div>

@@ -24,10 +24,19 @@ export interface RoleReport {
   subFlows: SubFlow[];
 }
 
+export interface FollowUpItem {
+  id: string;
+  question: string;
+  answer: string;
+  source: "ai" | "fallback";
+  createdAt: string;
+}
+
 export interface SopReport {
   output: SopOutput;
   overview: OverviewReport;
   roles: RoleReport[];
+  followUps: FollowUpItem[];
 }
 
 export function buildFallbackOverview(output: SopOutput): OverviewReport {
@@ -65,7 +74,7 @@ export function assembleReport(
   overview: OverviewReport,
   roles: RoleReport[]
 ): SopReport {
-  return { output, overview, roles };
+  return { output, overview, roles, followUps: [] };
 }
 
 function worksheetMarkdown(report: RoleReport): string {
@@ -155,6 +164,15 @@ export function toReportMarkdown(report: SopReport): string {
     lines.push("");
     lines.push(worksheetMarkdown(role));
   });
+
+  if (report.followUps.length > 0) {
+    lines.push("");
+    lines.push("## 追问与补充");
+    report.followUps.forEach((item) => {
+      lines.push(`- Q：${item.question}`);
+      lines.push(`  A：${item.answer}`);
+    });
+  }
 
   return lines.join("\n");
 }

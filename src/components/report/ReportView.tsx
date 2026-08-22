@@ -143,6 +143,22 @@ export function ReportView({ report }: { report: SopReport }) {
           </div>
         ))}
       </section>
+
+      {report.followUps.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>追问与补充</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {report.followUps.map((item) => (
+              <div key={item.id} className="space-y-1">
+                <p className="font-medium">Q：{item.question}</p>
+                <p className="text-muted-foreground">A：{item.answer}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

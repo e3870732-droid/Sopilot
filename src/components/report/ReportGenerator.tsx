@@ -10,6 +10,7 @@ import {
   Loader2,
   Printer,
   RefreshCw,
+  Send,
   X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +19,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   assembleReport,
   toReportMarkdown,
+  type FollowUpItem,
   type OverviewReport,
   type RoleReport,
   type SopReport
 } from "@/lib/sop-report";
+import { getReportSignature, loadReportDraft, saveReportDraft } from "@/lib/report-draft";
 import type { OperationType } from "@/types/user-profile";
 import type { SopOutput } from "@/types/workflow";
+import { ReportAdjustPanel } from "./ReportAdjustPanel";
 import { ReportView } from "./ReportView";
 
 type StepStatus = "pending" | "running" | "done" | "failed";
@@ -45,10 +49,15 @@ interface GenerateRoleResponse {
 
 export function ReportGenerator({ output }: { output: SopOutput }) {
   const router = useRouter();
+  const [currentOutput, setCurrentOutput] = useState<SopOutput>(output);
+  const outputRef = useRef<SopOutput>(output);
   const [statuses, setStatuses] = useState<Record<string, StepStatus>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [report, setReport] = useState<SopReport | null>(null);
   const [copied, setCopied] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const startedRef = useRef(false);
   const resultsRef = useRef<{
     overview: OverviewReport | null;
@@ -58,12 +67,12 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
   const stepDefs = useMemo<StepDefinition[]>(
     () => [
       { id: "overview", label: "执行总览" },
-      ...output.overview.map((worksheet) => ({
+      ...currentOutput.overview.map((worksheet) => ({
         id: `role:${worksheet.operationType}`,
         label: worksheet.name
       }))
     ],
-    [output]
+    [currentOutput]
   );
 
   function buildTarget(step: StepDefinition) {
@@ -80,7 +89,7 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ output, target: buildTarget(step) })
+      body: JSON.stringify({ output: outputRef.current, target: buildTarget(step) })
     });
 
     if (!response.ok) {
@@ -98,7 +107,7 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
     }
 
     const operationType = step.id.replace("role:", "") as OperationType;
-    const worksheet = output.overview.find((item) => item.operationType === operationType);
+    const worksheet = outputRef.current.overview.find((item) => item.operationType === operationType);
     if (!worksheet) {
       return;
     }
@@ -113,7 +122,7 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
       checklist: role.checklist,
       risks: role.risks,
       worksheet,
-      subFlows: output.subFlows.filter(
+      subFlows: outputRef.current.subFlows.filter(
         (subFlow) => subFlow.subcategory.operationType === operationType
       )
     };
@@ -147,10 +156,10 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
 
     const overview = resultsRef.current.overview;
     if (overview) {
-      const roles = output.overview
+      const roles = outputRef.current.overview
         .map((worksheet) => resultsRef.current.roles[worksheet.operationType])
         .filter((role): role is RoleReport => Boolean(role));
-      setReport(assembleReport(output, overview, roles));
+      setReport(assembleReport(outputRef.current, overview, roles));
     }
   }
 
@@ -159,8 +168,24 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
       return;
     }
     startedRef.current = true;
-    void runFrom(0);
+
+    const draft = loadReportDraft();
+    if (draft && draft.signature === getReportSignature(outputRef.current)) {
+      resultsRef.current = {
+        overview: draft.report.overview,
+        roles: Object.fromEntries(draft.report.roles.map((role) => [role.operationType, role]))
+      };
+      setReport(draft.report);
+    } else {
+      void runFrom(0);
+    }
   }, []);
+
+  useEffect(() => {
+    if (report) {
+      saveReportDraft(report);
+    }
+  }, [report]);
 
   function retryFailedStep() {
     const failedIndex = stepDefs.findIndex((step) => statuses[step.id] === "failed");
@@ -173,6 +198,85 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
     resultsRef.current = { overview: null, roles: {} };
     setReport(null);
     void runFrom(0);
+  }
+
+  function buildAdjustedQuery(next: SopOutput): string {
+    const params = new URLSearchParams(window.location.search);
+    params.set("stage", next.situation.stage);
+    params.delete("platform");
+    next.situation.platforms.forEach((platform) => params.append("platform", platform));
+    params.set("budgetTier", next.situation.budgetTier);
+    params.set("teamSize", next.teamSize);
+    params.set("primaryProblem", next.primaryProblem);
+    if (next.customPrimaryProblem) {
+      params.set("customPrimaryProblem", next.customPrimaryProblem);
+    } else {
+      params.delete("customPrimaryProblem");
+    }
+    return params.toString();
+  }
+
+  function handleApplyAdjustment(next: SopOutput) {
+    outputRef.current = next;
+    setCurrentOutput(next);
+    window.history.replaceState(null, "", `/report?${buildAdjustedQuery(next)}`);
+    resultsRef.current = { overview: null, roles: {} };
+    setReport(null);
+    setStatuses({});
+    setErrors({});
+    void runFrom(0);
+  }
+
+  async function askFollowUp() {
+    const value = question.trim();
+    if (!value || chatLoading || !report) {
+      return;
+    }
+
+    setChatLoading(true);
+    setChatError(null);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          output: outputRef.current,
+          question: value,
+          followUps: report.followUps
+        })
+      });
+
+      const data = (await response.json().catch(() => null)) as {
+        answer?: string;
+        source?: FollowUpItem["source"];
+        error?: string;
+      } | null;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "追问失败");
+      }
+      if (!data?.answer) {
+        throw new Error("模型返回内容为空");
+      }
+
+      const item: FollowUpItem = {
+        id: `${Date.now()}`,
+        question: value,
+        answer: data.answer,
+        source: data.source ?? "ai",
+        createdAt: new Date().toISOString()
+      };
+
+      setReport((previous) =>
+        previous ? { ...previous, followUps: [...previous.followUps, item] } : previous
+      );
+      setQuestion("");
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : "追问失败");
+    } finally {
+      setChatLoading(false);
+    }
   }
 
   async function copyMarkdown() {
@@ -220,13 +324,17 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <Button variant="ghost" onClick={() => router.back()}>
+        <Button variant="ghost" onClick={() => router.push(`/result${window.location.search}`)}>
           <ArrowLeft />
-          返回
+          返回预览
         </Button>
         <div className="flex flex-wrap items-center gap-2">
           {report ? (
             <>
+              <Button variant="outline" size="sm" onClick={restartAll}>
+                <RefreshCw />
+                重新生成
+              </Button>
               <Button variant="outline" size="sm" onClick={copyMarkdown}>
                 {copied ? <Check /> : <ClipboardCopy />}
                 {copied ? "已复制" : "复制 Markdown"}
@@ -254,7 +362,9 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
               <span className="text-muted-foreground">
                 第 {Math.min(doneCount + (failedStep ? 0 : 1), stepDefs.length)} / {stepDefs.length} 步
               </span>
-              <span className="text-muted-foreground">{doneCount}/{stepDefs.length} 已完成</span>
+              <span className="text-muted-foreground">
+                {doneCount}/{stepDefs.length} 已完成
+              </span>
             </div>
             <div className="space-y-2">
               {stepDefs.map((step, index) => {
@@ -308,7 +418,42 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
           </CardContent>
         </Card>
       ) : (
-        <ReportView report={report} />
+        <div className="space-y-6">
+          <ReportAdjustPanel output={outputRef.current} onApply={handleApplyAdjustment} />
+          <ReportView report={report} />
+
+          <Card className="print:hidden">
+            <CardHeader>
+              <CardTitle>继续追问</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {report.followUps.map((item) => (
+                <div key={item.id} className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">Q：{item.question}</p>
+                  <p className="mt-1 text-muted-foreground">A：{item.answer}</p>
+                </div>
+              ))}
+              {chatError ? <p className="text-sm text-destructive">{chatError}</p> : null}
+              <div className="flex gap-2">
+                <input
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      void askFollowUp();
+                    }
+                  }}
+                  placeholder="例如：预算改成 5 万，帮我调整本周计划"
+                  className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring"
+                />
+                <Button onClick={() => void askFollowUp()} disabled={chatLoading || !question.trim()}>
+                  {chatLoading ? <Loader2 className="animate-spin" /> : <Send />}
+                  发送
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
