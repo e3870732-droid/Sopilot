@@ -40,6 +40,7 @@ export default function QuestionnairePage() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [budgetTier, setBudgetTier] = useState<BudgetTier | null>(null);
   const [primaryProblem, setPrimaryProblem] = useState<PrimaryProblem | null>(null);
+  const [customPrimaryProblem, setCustomPrimaryProblem] = useState("");
 
   const isConfirmStep = step >= TOTAL_STEPS;
 
@@ -68,7 +69,14 @@ export default function QuestionnairePage() {
   }, [budgetTier, platforms, stage]);
 
   const selection = useMemo(() => {
-    if (!company || !situation || !teamSize || !primaryProblem || selectedOperationTypes.length === 0) {
+    if (
+      !company ||
+      !situation ||
+      !teamSize ||
+      !primaryProblem ||
+      (primaryProblem === "other" && !customPrimaryProblem.trim()) ||
+      selectedOperationTypes.length === 0
+    ) {
       return null;
     }
 
@@ -79,9 +87,19 @@ export default function QuestionnairePage() {
       subcategoryIds: selectedSubcategoryIds,
       customSubcategories,
       teamSize,
-      primaryProblem
+      primaryProblem,
+      customPrimaryProblem: customPrimaryProblem.trim()
     };
-  }, [company, customSubcategories, primaryProblem, selectedOperationTypes, selectedSubcategoryIds, situation, teamSize]);
+  }, [
+    company,
+    customPrimaryProblem,
+    customSubcategories,
+    primaryProblem,
+    selectedOperationTypes,
+    selectedSubcategoryIds,
+    situation,
+    teamSize
+  ]);
 
   const output = useMemo(() => (selection ? mapSelectionToSop(selection) : null), [selection]);
 
@@ -98,7 +116,8 @@ export default function QuestionnairePage() {
       stage,
       platforms,
       budgetTier,
-      primaryProblem
+      primaryProblem,
+      customPrimaryProblem
     }),
     [
       step,
@@ -112,7 +131,8 @@ export default function QuestionnairePage() {
       stage,
       platforms,
       budgetTier,
-      primaryProblem
+      primaryProblem,
+      customPrimaryProblem
     ]
   );
 
@@ -131,6 +151,7 @@ export default function QuestionnairePage() {
       setPlatforms(saved.platforms);
       setBudgetTier(saved.budgetTier);
       setPrimaryProblem(saved.primaryProblem);
+      setCustomPrimaryProblem(saved.customPrimaryProblem);
     }
     setMounted(true);
   }, []);
@@ -215,6 +236,9 @@ export default function QuestionnairePage() {
     selection.situation.platforms.forEach((platform) => params.append("platform", platform));
     params.set("budgetTier", selection.situation.budgetTier);
     params.set("primaryProblem", selection.primaryProblem);
+    if (selection.customPrimaryProblem) {
+      params.set("customPrimaryProblem", selection.customPrimaryProblem);
+    }
 
     router.push(`/result?${params.toString()}`);
   }
@@ -435,11 +459,26 @@ export default function QuestionnairePage() {
                       description={option.description}
                     />
                   ))}
+                  {primaryProblem === "other" ? (
+                    <textarea
+                      value={customPrimaryProblem}
+                      onChange={(event) => setCustomPrimaryProblem(event.target.value)}
+                      placeholder="请描述你最想先解决的问题"
+                      className="min-h-20 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring"
+                    />
+                  ) : null}
                 </div>
               </section>
             </div>
             <div className="flex justify-end pt-2">
-              <Button disabled={!situation || !primaryProblem} onClick={() => setStep(4)}>
+              <Button
+                disabled={
+                  !situation ||
+                  !primaryProblem ||
+                  (primaryProblem === "other" && !customPrimaryProblem.trim())
+                }
+                onClick={() => setStep(4)}
+              >
                 下一步
                 <ArrowRight />
               </Button>
@@ -482,7 +521,11 @@ export default function QuestionnairePage() {
                   <div className="text-sm font-medium text-muted-foreground">团队规模与优先问题</div>
                   <p className="mt-1">
                     {teamSize ? getOptionLabel("teamSize", teamSize) : ""} ·{" "}
-                    {primaryProblem ? getOptionLabel("primaryProblem", primaryProblem) : ""}
+                    {primaryProblem === "other"
+                      ? customPrimaryProblem.trim() || "其他"
+                      : primaryProblem
+                        ? getOptionLabel("primaryProblem", primaryProblem)
+                        : ""}
                   </p>
                 </div>
                 {situation ? (

@@ -16,6 +16,7 @@ export interface QuestionnaireDraft {
   platforms: Platform[];
   budgetTier: BudgetTier | null;
   primaryProblem: PrimaryProblem | null;
+  customPrimaryProblem: string;
 }
 
 const STORAGE_KEY = "sopilot:questionnaire:draft";
@@ -33,7 +34,8 @@ function normalizeDraft(value: Partial<QuestionnaireDraft>): QuestionnaireDraft 
     stage: value.stage ?? null,
     platforms: Array.isArray(value.platforms) ? value.platforms : [],
     budgetTier: value.budgetTier ?? null,
-    primaryProblem: value.primaryProblem ?? null
+    primaryProblem: value.primaryProblem ?? null,
+    customPrimaryProblem: typeof value.customPrimaryProblem === "string" ? value.customPrimaryProblem : ""
   };
 }
 

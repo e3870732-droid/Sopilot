@@ -57,6 +57,11 @@ export const questions: Question[] = [
         label: "不知道做得好不好",
         description: "工作做了很多，但缺少明确指标和复盘标准。",
         emphasis: "data_review"
+      },
+      {
+        id: "other",
+        label: "其他",
+        description: "填写你真正想先解决的问题。"
       }
     ]
   }

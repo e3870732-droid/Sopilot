@@ -14,7 +14,10 @@ interface WorkflowPreviewProps {
 export function WorkflowPreview({ output }: WorkflowPreviewProps) {
   const scale = getScaleAdaptation(output.teamSize);
   const teamLabel = getOptionLabel("teamSize", output.teamSize);
-  const problemLabel = getOptionLabel("primaryProblem", output.primaryProblem);
+  const problemLabel =
+    output.primaryProblem === "other"
+      ? output.customPrimaryProblem || "其他"
+      : getOptionLabel("primaryProblem", output.primaryProblem);
   const companyScaleLabel = getCompanyScaleLabel(output.company.companyScale);
   const stageLabel = getStageLabel(output.situation.stage);
   const budgetLabel = getBudgetTierLabel(output.situation.budgetTier);

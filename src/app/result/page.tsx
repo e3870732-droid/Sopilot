@@ -29,6 +29,7 @@ export default async function ResultPage({
   const subcategoryIds = readParams(params, "subcategoryId");
   const teamSizeValues = readParams(params, "teamSize");
   const problemValues = readParams(params, "primaryProblem");
+  const customProblemValues = readParams(params, "customPrimaryProblem");
   const industryValues = readParams(params, "industry");
   const businessModelValues = readParams(params, "businessModel");
   const companyScaleValues = readParams(params, "companyScale");
@@ -39,6 +40,7 @@ export default async function ResultPage({
   const budgetValues = readParams(params, "budgetTier");
   const teamSize = teamSizeValues.find(isTeamSize);
   const primaryProblem = problemValues.find(isPrimaryProblem);
+  const customPrimaryProblem = customProblemValues[0]?.trim();
   const industry = industryValues.find(isIndustry);
   const companyScale = companyScaleValues.find(isCompanyScale);
   const businessModel = businessModelValues[0]?.trim();
@@ -57,6 +59,7 @@ export default async function ResultPage({
     operationTypes.length === 0 ||
     !teamSize ||
     !primaryProblem ||
+    (primaryProblem === "other" && !customPrimaryProblem) ||
     !industry ||
     !companyScale ||
     !businessModel ||
@@ -92,7 +95,8 @@ export default async function ResultPage({
     subcategoryIds,
     customSubcategories,
     teamSize,
-    primaryProblem
+    primaryProblem,
+    customPrimaryProblem
   });
 
   return (

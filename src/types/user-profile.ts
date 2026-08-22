@@ -15,7 +15,8 @@ export const PRIMARY_PROBLEMS = [
   "unclear_process",
   "low_efficiency",
   "frequent_errors",
-  "lack_of_metrics"
+  "lack_of_metrics",
+  "other"
 ] as const;
 
 export const PRIMARY_EMPHASES = [

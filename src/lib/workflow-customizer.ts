@@ -5,7 +5,8 @@ export const PROBLEM_EMPHASIS: Record<PrimaryProblem, PrimaryEmphasis> = {
   unclear_process: "strategy_and_process",
   low_efficiency: "execution_efficiency",
   frequent_errors: "quality_control",
-  lack_of_metrics: "data_review"
+  lack_of_metrics: "data_review",
+  other: "strategy_and_process"
 };
 
 export const EMPHASIS_LABELS: Record<PrimaryEmphasis, string> = {
@@ -19,7 +20,8 @@ export const EMPHASIS_FOCUS: Record<PrimaryProblem, string> = {
   unclear_process: "强化每个阶段的入口/出口定义与先后顺序",
   low_efficiency: "强化时间要求、减少审批、模板化与批量处理",
   frequent_errors: "强化检查清单、Review 节点、风险点与异常处理",
-  lack_of_metrics: "强化 KPI、复盘频率与数据反馈机制"
+  lack_of_metrics: "强化 KPI、复盘频率与数据反馈机制",
+  other: "根据你的描述，重点梳理流程、执行与复盘标准"
 };
 
 export const TEAM_SCALE_ADAPTATION: Record<TeamSize, ScaleAdaptation> = {

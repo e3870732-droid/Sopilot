@@ -62,6 +62,7 @@ export interface QuestionnaireSelection {
   customSubcategories: CustomSubcategory[];
   teamSize: TeamSize;
   primaryProblem: PrimaryProblem;
+  customPrimaryProblem?: string;
 }
 
 export interface SopOutput {
@@ -69,6 +70,7 @@ export interface SopOutput {
   situation: SituationProfile;
   teamSize: TeamSize;
   primaryProblem: PrimaryProblem;
+  customPrimaryProblem?: string;
   emphasis: PrimaryEmphasis;
   overview: RoleWorksheet[];
   subFlows: SubFlow[];
