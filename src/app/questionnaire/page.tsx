@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { CategorySelector } from "@/components/questionnaire/CategorySelector";
@@ -16,6 +16,7 @@ import { findSubcategory, getSubcategories } from "@/data/subcategories";
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
 import { EMPHASIS_FOCUS } from "@/lib/workflow-customizer";
 import { cn } from "@/lib/utils";
+import { loadQuestionnaireDraft, saveQuestionnaireDraft, type QuestionnaireDraft } from "@/lib/questionnaire-draft";
 import { isCompanyScale, isIndustry, type CompanyProfile, type CompanyScale, type Industry } from "@/types/company";
 import { isBudgetTier, isPlatform, isStage, type BudgetTier, type Platform, type SituationProfile, type Stage } from "@/types/situation";
 import { isPrimaryProblem, isTeamSize } from "@/types/user-profile";
@@ -27,6 +28,7 @@ const TOTAL_STEPS = 4;
 export default function QuestionnairePage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const [industry, setIndustry] = useState<Industry | null>(null);
   const [businessModel, setBusinessModel] = useState("");
   const [companyScale, setCompanyScale] = useState<CompanyScale | null>(null);
@@ -82,6 +84,64 @@ export default function QuestionnairePage() {
   }, [company, customSubcategories, primaryProblem, selectedOperationTypes, selectedSubcategoryIds, situation, teamSize]);
 
   const output = useMemo(() => (selection ? mapSelectionToSop(selection) : null), [selection]);
+
+  const draft = useMemo<QuestionnaireDraft>(
+    () => ({
+      step,
+      industry,
+      businessModel,
+      companyScale,
+      selectedOperationTypes,
+      selectedSubcategoryIds,
+      customSubcategories,
+      teamSize,
+      stage,
+      platforms,
+      budgetTier,
+      primaryProblem
+    }),
+    [
+      step,
+      industry,
+      businessModel,
+      companyScale,
+      selectedOperationTypes,
+      selectedSubcategoryIds,
+      customSubcategories,
+      teamSize,
+      stage,
+      platforms,
+      budgetTier,
+      primaryProblem
+    ]
+  );
+
+  useEffect(() => {
+    const saved = loadQuestionnaireDraft();
+    if (saved) {
+      setStep(Math.min(Math.max(saved.step, 0), TOTAL_STEPS));
+      setIndustry(saved.industry);
+      setBusinessModel(saved.businessModel);
+      setCompanyScale(saved.companyScale);
+      setSelectedOperationTypes(saved.selectedOperationTypes);
+      setSelectedSubcategoryIds(saved.selectedSubcategoryIds);
+      setCustomSubcategories(saved.customSubcategories);
+      setTeamSize(saved.teamSize);
+      setStage(saved.stage);
+      setPlatforms(saved.platforms);
+      setBudgetTier(saved.budgetTier);
+      setPrimaryProblem(saved.primaryProblem);
+    }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+
+    saveQuestionnaireDraft(draft);
+  }, [mounted, draft]);
 
   function toggleOperationType(id: OperationType) {
     const exists = selectedOperationTypes.includes(id);

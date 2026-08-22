@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { StartQuestionnaireButton } from "@/components/StartQuestionnaireButton";
 
 export default function HomePage() {
   return (
@@ -15,12 +13,7 @@ export default function HomePage() {
             选择你的运营方向，快速获得适配团队的岗位工作纸与标准流程。
           </p>
         </div>
-        <Button asChild size="lg">
-          <Link href="/questionnaire">
-            开始生成我的 SOP
-            <ArrowRight />
-          </Link>
-        </Button>
+        <StartQuestionnaireButton />
       </div>
     </main>
   );
