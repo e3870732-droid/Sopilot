@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   assembleReport,
+  buildFallbackOverview,
+  buildFallbackRole,
   toReportMarkdown,
   type FollowUpItem,
   type OverviewReport,
@@ -85,19 +87,23 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
     };
   }
 
+  // 静态演示版：不依赖后端 API，直接在浏览器端生成确定性建议
   async function fetchStep(step: StepDefinition) {
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ output: outputRef.current, target: buildTarget(step) })
-    });
+    // 保留逐步生成的节奏感
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      throw new Error(data?.error || "生成失败");
+    const target = buildTarget(step);
+    if (target.kind === "overview") {
+      return buildFallbackOverview(outputRef.current);
     }
 
-    return response.json();
+    const worksheet = outputRef.current.overview.find(
+      (item) => item.operationType === target.operationType
+    );
+    if (!worksheet) {
+      throw new Error("未找到对应岗位");
+    }
+    return buildFallbackRole(outputRef.current, worksheet);
   }
 
   function applyResult(step: StepDefinition, result: unknown) {
@@ -219,7 +225,7 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
   function handleApplyAdjustment(next: SopOutput) {
     outputRef.current = next;
     setCurrentOutput(next);
-    window.history.replaceState(null, "", `/report?${buildAdjustedQuery(next)}`);
+    window.history.replaceState(null, "", `${window.location.pathname}?${buildAdjustedQuery(next)}`);
     resultsRef.current = { overview: null, roles: {} };
     setReport(null);
     setStatuses({});
@@ -228,6 +234,16 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
   }
 
   async function askFollowUp() {
+    const value = question.trim();
+    if (!value || chatLoading || !report) {
+      return;
+    }
+
+    // 静态演示版：AI 追问依赖后端 API，在纯静态托管下不可用
+    setChatError("当前为静态演示版，AI 追问功能不可用。报告正文已由内置规则生成。");
+  }
+
+  async function askFollowUpWithApi() {
     const value = question.trim();
     if (!value || chatLoading || !report) {
       return;

@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { GenerateReportButton } from "@/components/report/GenerateReportButton";
 import { ResumeReportButton } from "@/components/report/ResumeReportButton";
 import { ResultActions } from "@/components/workflow/ResultActions";
@@ -7,13 +11,24 @@ import { Button } from "@/components/ui/button";
 import { parseSopOutputFromSearchParams, type SearchParams } from "@/lib/parse-sop-output";
 import { toMarkdown } from "@/lib/workflow-enrichment";
 
-export default async function ResultPage({
-  searchParams
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  const params = await searchParams;
-  const output = parseSopOutputFromSearchParams(params);
+function toSearchParams(searchParams: ReturnType<typeof useSearchParams>): SearchParams {
+  const params: SearchParams = {};
+  searchParams.forEach((value, key) => {
+    const existing = params[key];
+    if (existing === undefined) {
+      params[key] = value;
+    } else if (Array.isArray(existing)) {
+      existing.push(value);
+    } else {
+      params[key] = [existing, value];
+    }
+  });
+  return params;
+}
+
+function ResultContent() {
+  const searchParams = useSearchParams();
+  const output = parseSopOutputFromSearchParams(toSearchParams(searchParams));
 
   if (!output) {
     return (
@@ -47,5 +62,13 @@ export default async function ResultPage({
         <WorkflowPreview output={output} />
       </div>
     </main>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense>
+      <ResultContent />
+    </Suspense>
   );
 }

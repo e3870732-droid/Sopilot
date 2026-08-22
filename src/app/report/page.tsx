@@ -1,16 +1,31 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { ReportGenerator } from "@/components/report/ReportGenerator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { parseSopOutputFromSearchParams, type SearchParams } from "@/lib/parse-sop-output";
 
-export default async function ReportPage({
-  searchParams
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  const params = await searchParams;
-  const output = parseSopOutputFromSearchParams(params);
+function toSearchParams(searchParams: ReturnType<typeof useSearchParams>): SearchParams {
+  const params: SearchParams = {};
+  searchParams.forEach((value, key) => {
+    const existing = params[key];
+    if (existing === undefined) {
+      params[key] = value;
+    } else if (Array.isArray(existing)) {
+      existing.push(value);
+    } else {
+      params[key] = [existing, value];
+    }
+  });
+  return params;
+}
+
+function ReportContent() {
+  const searchParams = useSearchParams();
+  const output = parseSopOutputFromSearchParams(toSearchParams(searchParams));
 
   if (!output) {
     return (
@@ -42,5 +57,13 @@ export default async function ReportPage({
         <ReportGenerator output={output} />
       </div>
     </main>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense>
+      <ReportContent />
+    </Suspense>
   );
 }
