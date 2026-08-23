@@ -25,12 +25,36 @@ export interface ContextAnswers {
   hasLegalReviewer?: "yes" | "no";
 }
 
+/** 痛点归因 key：每个首要问题下各 4 个归因方向 */
+export type AttributionKey =
+  | "not_documented"
+  | "documented_but_ignored"
+  | "wrong_sequence"
+  | "unclear_ownership"
+  | "approval_overhead"
+  | "handoff_churn"
+  | "no_templates"
+  | "priority_chaos"
+  | "missing_checks"
+  | "handoff_info_loss"
+  | "unskilled_operation"
+  | "inconsistent_standards"
+  | "no_metrics_defined"
+  | "no_review_rhythm"
+  | "no_benchmark"
+  | "data_scattered";
+
+/** 归因按所选大类逐个回答：operationType → attribution */
+export type AttributionSelection = Partial<Record<OperationType, AttributionKey>>;
+
 export interface WorksheetStep {
   title: string;
   action: string;
   owner?: string;
   handoff?: string;
   proof: string;
+  /** 该步骤能解决的归因（痛点归因 key），用于按用户卡点标注 P0/P1 */
+  tags?: AttributionKey[];
 }
 
 export interface CadenceItem {
@@ -76,6 +100,7 @@ export interface QuestionnaireSelection {
   primaryProblem: PrimaryProblem;
   customPrimaryProblem?: string;
   contextAnswers?: ContextAnswers;
+  attributions?: AttributionSelection;
 }
 
 export interface SopOutput {
@@ -85,6 +110,7 @@ export interface SopOutput {
   primaryProblem: PrimaryProblem;
   customPrimaryProblem?: string;
   contextAnswers?: ContextAnswers;
+  attributions?: AttributionSelection;
   emphasis: PrimaryEmphasis;
   overview: RoleWorksheet[];
   subFlows: SubFlow[];

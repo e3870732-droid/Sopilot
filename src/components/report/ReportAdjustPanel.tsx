@@ -52,6 +52,8 @@ export function ReportAdjustPanel({ output, onApply }: ReportAdjustPanelProps) {
       },
       teamSize,
       primaryProblem,
+      // 换了首要问题后旧的归因答案失效，需要重新走问卷才能再标注
+      attributions: primaryProblem === output.primaryProblem ? output.attributions : undefined,
       customPrimaryProblem: primaryProblem === "other" ? customPrimaryProblem.trim() : undefined
     });
   }

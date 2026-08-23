@@ -14,28 +14,32 @@ export const marketWorkflow: RoleWorksheet = {
       action: "按客户来源、决策链和转化周期，筛出 2—3 个最值得验证的渠道；写清目标、预算、素材与停止条件。",
       owner: "市场运营",
       handoff: "与销售确认线索定义、跟进时限和回传字段。",
-      proof: "渠道实验单 + 预算审批记录"
+      proof: "渠道实验单 + 预算审批记录",
+      tags: ["not_documented", "no_benchmark"]
     },
     {
       title: "拓展与测试",
       action: "完成媒体、平台或异业伙伴触达，先用小预算或小范围合作验证有效流量，不先承诺规模。",
       owner: "市场运营 / BD",
       handoff: "把合作条件、排期和素材需求交给内容与设计。",
-      proof: "合作记录 + 测试排期 + 来源码"
+      proof: "合作记录 + 测试排期 + 来源码",
+      tags: ["no_templates", "handoff_churn"]
     },
     {
       title: "投放与监控",
       action: "上线前检查落地页、表单、埋点和销售承接；上线后看消耗、有效线索、线索质量和异常波动。",
       owner: "市场运营",
       handoff: "异常超过阈值时，联动销售、产品或技术止损。",
-      proof: "日监控表 + 异常处理记录"
+      proof: "日监控表 + 异常处理记录",
+      tags: ["missing_checks", "handoff_info_loss"]
     },
     {
       title: "复盘与续约",
       action: "按渠道拆 CAC、有效率、转化率、收入贡献与回收周期，保留优质渠道，停掉无法解释的投入。",
       owner: "市场负责人",
       handoff: "与财务核对账单，与 BD 讨论续签或改价。",
-      proof: "月度 ROI 复盘 + 续签建议"
+      proof: "月度 ROI 复盘 + 续签建议",
+      tags: ["no_review_rhythm", "documented_but_ignored"]
     }
   ],
   cadence: [

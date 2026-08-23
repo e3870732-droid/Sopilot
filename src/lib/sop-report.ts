@@ -1,3 +1,4 @@
+import { getStepPriority, type StepPriority } from "@/data/attributions";
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
 import { getBudgetTierLabel, getPlatformLabel } from "@/data/situation";
@@ -56,12 +57,22 @@ export function buildFallbackRole(output: SopOutput, worksheet: RoleWorksheet): 
     (subFlow) => subFlow.subcategory.operationType === worksheet.operationType
   );
 
+  // P0 步骤排在重点任务最前
+  const priorityRank: Record<StepPriority, number> = { P0: 0, P1: 1, P2: 2 };
+  const sortedSteps = worksheet.steps
+    .map((step, index) => ({
+      step,
+      priority: getStepPriority(step.tags, worksheet.operationType, output),
+      index
+    }))
+    .sort((a, b) => priorityRank[a.priority] - priorityRank[b.priority] || a.index - b.index);
+
   return {
     source: "fallback",
     operationType: worksheet.operationType,
     name: worksheet.name,
     roleBrief: worksheet.northStar,
-    priorityTasks: worksheet.steps.slice(0, 3).map((step) => step.title),
+    priorityTasks: sortedSteps.slice(0, 3).map(({ step }) => step.title),
     checklist: worksheet.guardrails,
     risks: [],
     worksheet,

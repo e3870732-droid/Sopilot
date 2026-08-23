@@ -1,7 +1,7 @@
 import type { CompanyScale, Industry } from "@/types/company";
 import type { BudgetTier, Platform } from "@/types/situation";
 import type { OperationType, PrimaryProblem, TeamSize } from "@/types/user-profile";
-import type { ContextAnswers, CustomSubcategory } from "@/types/workflow";
+import type { ContextAnswers, AttributionSelection, CustomSubcategory } from "@/types/workflow";
 
 export interface QuestionnaireDraft {
   step: number;
@@ -19,6 +19,7 @@ export interface QuestionnaireDraft {
   livestreamGoods: ContextAnswers["livestreamGoods"] | null;
   privateDomainSize: ContextAnswers["privateDomainSize"] | null;
   hasLegalReviewer: ContextAnswers["hasLegalReviewer"] | null;
+  attributions: AttributionSelection;
 }
 
 const STORAGE_KEY = "sopilot:questionnaire:draft";
@@ -39,7 +40,8 @@ function normalizeDraft(value: Partial<QuestionnaireDraft>): QuestionnaireDraft 
     customPrimaryProblem: typeof value.customPrimaryProblem === "string" ? value.customPrimaryProblem : "",
     livestreamGoods: value.livestreamGoods ?? null,
     privateDomainSize: value.privateDomainSize ?? null,
-    hasLegalReviewer: value.hasLegalReviewer ?? null
+    hasLegalReviewer: value.hasLegalReviewer ?? null,
+    attributions: value.attributions && typeof value.attributions === "object" ? value.attributions : {}
   };
 }
 

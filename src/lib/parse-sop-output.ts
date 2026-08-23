@@ -1,8 +1,9 @@
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
+import { ATTRIBUTION_KEYS_BY_PROBLEM, isAttributionKey, type AttributableProblem } from "@/data/attributions";
 import { isCompanyScale, isIndustry } from "@/types/company";
 import { isBudgetTier, isPlatform } from "@/types/situation";
 import { isOperationType, isPrimaryProblem, isTeamSize } from "@/types/user-profile";
-import type { ContextAnswers, CustomSubcategory, SopOutput } from "@/types/workflow";
+import type { AttributionSelection, ContextAnswers, CustomSubcategory, SopOutput } from "@/types/workflow";
 
 export type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -74,6 +75,20 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
     return null;
   }
 
+  // 归因追问：选了非「其他」的首要问题时，每个已选大类都必须有对应归因
+  const attributions: AttributionSelection = {};
+  if (primaryProblem !== "other") {
+    const allowedKeys = ATTRIBUTION_KEYS_BY_PROBLEM[primaryProblem as AttributableProblem];
+    for (const operationType of operationTypes) {
+      const value = readParams(params, `attr_${operationType}`)[0];
+      if (isAttributionKey(value) && allowedKeys.includes(value)) {
+        attributions[operationType] = value;
+      } else {
+        return null;
+      }
+    }
+  }
+
   return mapSelectionToSop({
     company: { industry, businessModel, companyScale },
     situation: { platforms, budgetTier },
@@ -83,6 +98,7 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
     teamSize,
     primaryProblem,
     customPrimaryProblem,
-    contextAnswers
+    contextAnswers,
+    attributions: primaryProblem === "other" ? undefined : attributions
   });
 }

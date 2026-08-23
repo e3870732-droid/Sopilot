@@ -1,3 +1,4 @@
+import { buildFocusLine, getAttributionDef, getStepPriority, type StepPriority } from "@/data/attributions";
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
 import { getBudgetTierLabel, getPlatformLabel } from "@/data/situation";
@@ -155,7 +156,12 @@ export function getContextInjections(output: SopOutput): ContextInjection[] {
   return injections;
 }
 
-function worksheetToMarkdown(worksheet: RoleWorksheet, level: "##" | "###", heading = worksheet.name): string {
+function worksheetToMarkdown(
+  worksheet: RoleWorksheet,
+  level: "##" | "###",
+  heading = worksheet.name,
+  priorities?: StepPriority[]
+): string {
   const lines: string[] = [];
   lines.push(`${level} ${heading}`);
   lines.push("");
@@ -167,7 +173,9 @@ function worksheetToMarkdown(worksheet: RoleWorksheet, level: "##" | "###", head
   lines.push(`#### 标准流程`);
   worksheet.steps.forEach((step, index) => {
     const owner = step.owner ? `（${step.owner}）` : "";
-    lines.push(`${index + 1}. **${step.title}**${owner}`);
+    const priority = priorities?.[index];
+    const priorityMark = priority === "P0" ? "【P0·重点改造】" : priority === "P1" ? "【P1】" : "";
+    lines.push(`${index + 1}. ${priorityMark}**${step.title}**${owner}`);
     lines.push(`   - ${step.action}`);
     if (step.handoff) {
       lines.push(`   - 交接：${step.handoff}`);
@@ -243,7 +251,18 @@ export function toMarkdown(output: SopOutput): string {
   lines.push("## 本次优化重点");
   lines.push(`- 团队：${getOptionLabel("teamSize", output.teamSize)}`);
   lines.push(`- 优先解决：${problemLabel}`);
-  lines.push(`- 重点：${EMPHASIS_FOCUS[output.primaryProblem]}`);
+  if (output.attributions && output.primaryProblem !== "other") {
+    output.overview.forEach((worksheet) => {
+      const attribution = output.attributions?.[worksheet.operationType];
+      if (attribution) {
+        lines.push(
+          `- ${worksheet.name}（归因：${getAttributionDef(attribution).label}）：${buildFocusLine(worksheet.operationType, attribution)}`
+        );
+      }
+    });
+  } else {
+    lines.push(`- 重点：${EMPHASIS_FOCUS[output.primaryProblem]}`);
+  }
   lines.push("");
   lines.push("## 执行总览");
   lines.push(summary.headline);
@@ -274,7 +293,11 @@ export function toMarkdown(output: SopOutput): string {
   lines.push("## 总纲");
   output.overview.forEach((worksheet) => {
     lines.push("");
-    lines.push(worksheetToMarkdown(worksheet, "###"));
+    const priorities =
+      output.attributions && output.primaryProblem !== "other"
+        ? worksheet.steps.map((step) => getStepPriority(step.tags, worksheet.operationType, output))
+        : undefined;
+    lines.push(worksheetToMarkdown(worksheet, "###", worksheet.name, priorities));
   });
 
   if (output.subFlows.length > 0) {
@@ -282,7 +305,13 @@ export function toMarkdown(output: SopOutput): string {
     lines.push("## 子流程");
     output.subFlows.forEach((subFlow) => {
       lines.push("");
-      lines.push(worksheetToMarkdown(subFlow.worksheet, "###", subFlow.subcategory.name));
+      const priorities =
+        output.attributions && output.primaryProblem !== "other"
+          ? subFlow.worksheet.steps.map((step) =>
+              getStepPriority(step.tags, subFlow.worksheet.operationType, output)
+            )
+          : undefined;
+      lines.push(worksheetToMarkdown(subFlow.worksheet, "###", subFlow.subcategory.name, priorities));
     });
   }
 

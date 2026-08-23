@@ -14,28 +14,32 @@ export const eventWorkflow: RoleWorksheet = {
       action: "明确目标类型、KPI 设定、预算申请和时间节点。",
       owner: "策划 / 负责人",
       handoff: "立项文档审批后进入方案阶段。",
-      proof: "立项文档 + 审批记录"
+      proof: "立项文档 + 审批记录",
+      tags: ["not_documented", "approval_overhead"]
     },
     {
       title: "方案与排期",
       action: "设计玩法、规则、奖品与风险预案，并与跨部门对齐执行排期。",
       owner: "活动策划",
       handoff: "方案评审通过，各部门需求确认。",
-      proof: "活动方案 + 排期表"
+      proof: "活动方案 + 排期表",
+      tags: ["wrong_sequence", "handoff_churn"]
     },
     {
       title: "筹备上线",
       action: "完成页面与物料设计开发、测试验收、推广排期和客服话术培训。",
       owner: "策划 / 设计 / 技术",
       handoff: "物料验收通过，客服完成培训。",
-      proof: "物料验收单 + 培训记录"
+      proof: "物料验收单 + 培训记录",
+      tags: ["missing_checks", "unskilled_operation"]
     },
     {
       title: "监控与复盘",
       action: "用实时数据看板监控关键节点，处理异常，活动结束后输出结案报告。",
       owner: "活动运营",
       handoff: "复盘结论沉淀进 SOP 和经验库。",
-      proof: "数据看板 + 结案报告"
+      proof: "数据看板 + 结案报告",
+      tags: ["no_metrics_defined", "no_review_rhythm"]
     }
   ],
   cadence: [

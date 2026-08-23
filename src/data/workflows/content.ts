@@ -14,28 +14,32 @@ export const contentWorkflow: RoleWorksheet = {
       action: "从用户痛点、关键词、热点和业务节点中筛选选题，明确受众、场景、主张、证据与 CTA。",
       owner: "内容运营",
       handoff: "涉及专业内容时，提前拉业务专家审口径。",
-      proof: "周内容日历 + 选题卡"
+      proof: "周内容日历 + 选题卡",
+      tags: ["not_documented", "priority_chaos"]
     },
     {
       title: "生产与审核",
       action: "按模板完成脚本、图文或视频，先自检事实、版权、敏感表述和转化入口，再提交审核。",
       owner: "内容运营 / 设计",
       handoff: "审核通过后才进入排期。",
-      proof: "成稿 + 审核记录 + 素材归档"
+      proof: "成稿 + 审核记录 + 素材归档",
+      tags: ["approval_overhead", "missing_checks"]
     },
     {
       title: "分发与互动",
       action: "根据平台用户习惯调整标题、封面、时长和首屏；发布后及时回复评论，识别高频问题。",
       owner: "内容运营",
       handoff: "高意向咨询交给客服或销售。",
-      proof: "发布链接 + 评论处理表"
+      proof: "发布链接 + 评论处理表",
+      tags: ["inconsistent_standards", "handoff_info_loss"]
     },
     {
       title: "数据迭代",
       action: "看完播、阅读、互动、收藏、关注和点击；拆解高低表现，沉淀下一轮可复用的做法。",
       owner: "数据 / 策划",
       handoff: "把结论写入选题库与模板库。",
-      proof: "内容周报 + 爆款/失效拆解"
+      proof: "内容周报 + 爆款/失效拆解",
+      tags: ["no_review_rhythm", "documented_but_ignored"]
     }
   ],
   cadence: [

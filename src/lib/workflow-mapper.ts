@@ -47,6 +47,7 @@ export function mapSelectionToSop(selection: QuestionnaireSelection): SopOutput 
     primaryProblem: selection.primaryProblem,
     customPrimaryProblem: selection.customPrimaryProblem,
     contextAnswers: selection.contextAnswers,
+    attributions: selection.attributions,
     emphasis: PROBLEM_EMPHASIS[selection.primaryProblem],
     overview,
     subFlows: [...subFlows, ...customSubFlows]

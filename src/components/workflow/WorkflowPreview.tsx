@@ -1,15 +1,23 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildFocusLine, getAttributionDef, getStepPriority, type StepPriority } from "@/data/attributions";
 import { getCompanyScaleLabel, getIndustryLabel } from "@/data/company";
 import { getOptionLabel } from "@/data/questions";
 import { getBudgetTierLabel, getPlatformLabel } from "@/data/situation";
 import { EMPHASIS_LABELS, getScaleAdaptation } from "@/lib/workflow-customizer";
 import { getContextInjections, getExecutiveSummary, getSevenDayPlan } from "@/lib/workflow-enrichment";
-import type { SopOutput } from "@/types/workflow";
+import type { RoleWorksheet, SopOutput } from "@/types/workflow";
 import { RoleWorksheetCard } from "./RoleWorksheetCard";
 
 interface WorkflowPreviewProps {
   output: SopOutput;
+}
+
+function getWorksheetPriorities(worksheet: RoleWorksheet, output: SopOutput): StepPriority[] | undefined {
+  if (!output.attributions || output.primaryProblem === "other") {
+    return undefined;
+  }
+  return worksheet.steps.map((step) => getStepPriority(step.tags, worksheet.operationType, output));
 }
 
 export function WorkflowPreview({ output }: WorkflowPreviewProps) {
@@ -47,9 +55,31 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
               {teamLabel}团队 · 优先解决{problemLabel}
             </p>
           </div>
-          <div>
+          <div className="sm:col-span-2">
             <div className="font-medium text-muted-foreground">优化重点</div>
-            <Badge className="mt-1">{EMPHASIS_LABELS[output.emphasis]}</Badge>
+            {output.attributions && output.primaryProblem !== "other" ? (
+              <div className="mt-1 space-y-1">
+                {output.overview.map((worksheet) => {
+                  const attribution = output.attributions?.[worksheet.operationType];
+                  if (!attribution) {
+                    return null;
+                  }
+                  return (
+                    <p key={worksheet.id} className="text-sm">
+                      <Badge variant="outline" className="mr-2">
+                        {getAttributionDef(attribution).label}
+                      </Badge>
+                      <span className="font-medium">{worksheet.name}：</span>
+                      <span className="text-muted-foreground">
+                        {buildFocusLine(worksheet.operationType, attribution)}
+                      </span>
+                    </p>
+                  );
+                })}
+              </div>
+            ) : (
+              <Badge className="mt-1">{EMPHASIS_LABELS[output.emphasis]}</Badge>
+            )}
           </div>
           <div className="sm:col-span-2">
             <div className="font-medium text-muted-foreground">平台</div>
@@ -162,7 +192,11 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
         <h2 className="text-xl font-semibold tracking-tight">总纲</h2>
         <div className="space-y-6">
           {output.overview.map((worksheet) => (
-            <RoleWorksheetCard key={worksheet.id} worksheet={worksheet} />
+            <RoleWorksheetCard
+              key={worksheet.id}
+              worksheet={worksheet}
+              priorities={getWorksheetPriorities(worksheet, output)}
+            />
           ))}
         </div>
       </section>
@@ -177,7 +211,10 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
                   <h3 className="text-lg font-semibold">{subFlow.subcategory.name}</h3>
                   <Badge variant="outline">{subFlow.worksheet.name}</Badge>
                 </div>
-                <RoleWorksheetCard worksheet={subFlow.worksheet} />
+                <RoleWorksheetCard
+                  worksheet={subFlow.worksheet}
+                  priorities={getWorksheetPriorities(subFlow.worksheet, output)}
+                />
               </div>
             ))}
           </div>

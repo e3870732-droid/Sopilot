@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { COMPANY_SCALE_OPTIONS, INDUSTRY_OPTIONS } from "@/data/company";
 import { getOperationCategory } from "@/data/categories";
 import { getOptionLabel, questions } from "@/data/questions";
+import { ATTRIBUTION_DEFS, buildFocusLine, getAttributionDef, getAttributionOptionText, type AttributableProblem } from "@/data/attributions";
 import { BUDGET_OPTIONS, PLATFORM_OPTIONS } from "@/data/situation";
 import { findSubcategory, getSubcategories } from "@/data/subcategories";
 import { mapSelectionToSop } from "@/lib/workflow-mapper";
@@ -21,7 +22,7 @@ import { isCompanyScale, isIndustry, type CompanyProfile, type CompanyScale, typ
 import { isBudgetTier, isPlatform, type BudgetTier, type Platform, type SituationProfile } from "@/types/situation";
 import { isPrimaryProblem, isTeamSize } from "@/types/user-profile";
 import type { OperationType, PrimaryProblem, TeamSize } from "@/types/user-profile";
-import type { ContextAnswers, CustomSubcategory } from "@/types/workflow";
+import type { AttributionKey, AttributionSelection, ContextAnswers, CustomSubcategory } from "@/types/workflow";
 
 const TOTAL_STEPS = 4;
 
@@ -43,6 +44,7 @@ export default function QuestionnairePage() {
   const [livestreamGoods, setLivestreamGoods] = useState<ContextAnswers["livestreamGoods"] | null>(null);
   const [privateDomainSize, setPrivateDomainSize] = useState<ContextAnswers["privateDomainSize"] | null>(null);
   const [hasLegalReviewer, setHasLegalReviewer] = useState<ContextAnswers["hasLegalReviewer"] | null>(null);
+  const [attributions, setAttributions] = useState<AttributionSelection>({});
 
   const isConfirmStep = step >= TOTAL_STEPS;
 
@@ -71,6 +73,25 @@ export default function QuestionnairePage() {
     (!showLivestreamGoods || livestreamGoods !== null) &&
     (!showPrivateDomainSize || privateDomainSize !== null) &&
     (!showLegalReviewer || hasLegalReviewer !== null);
+
+  // 归因追问：选了非「其他」的首要问题时，每个已选大类都要回答
+  const needsAttribution = primaryProblem !== null && primaryProblem !== "other";
+  const attributionsComplete =
+    !needsAttribution || selectedOperationTypes.every((op) => attributions[op] != null);
+
+  function handleSelectPrimaryProblem(id: PrimaryProblem) {
+    setPrimaryProblem((previous) => {
+      if (previous !== id) {
+        // 归因选项归属于具体痛点，换痛点时清空已答归因
+        setAttributions({});
+      }
+      return id;
+    });
+  }
+
+  function handleSelectAttribution(operationType: OperationType, key: AttributionKey) {
+    setAttributions((current) => ({ ...current, [operationType]: key }));
+  }
 
   const company = useMemo<CompanyProfile | null>(() => {
     if (!industry || !companyScale || !businessModel.trim()) {
@@ -103,7 +124,8 @@ export default function QuestionnairePage() {
       !primaryProblem ||
       (primaryProblem === "other" && !customPrimaryProblem.trim()) ||
       selectedOperationTypes.length === 0 ||
-      !contextAnswersComplete
+      !contextAnswersComplete ||
+      !attributionsComplete
     ) {
       return null;
     }
@@ -117,9 +139,12 @@ export default function QuestionnairePage() {
       teamSize,
       primaryProblem,
       customPrimaryProblem: customPrimaryProblem.trim(),
-      contextAnswers
+      contextAnswers,
+      attributions: primaryProblem === "other" ? undefined : attributions
     };
   }, [
+    attributions,
+    attributionsComplete,
     company,
     contextAnswers,
     contextAnswersComplete,
@@ -150,7 +175,8 @@ export default function QuestionnairePage() {
       customPrimaryProblem,
       livestreamGoods,
       privateDomainSize,
-      hasLegalReviewer
+      hasLegalReviewer,
+      attributions
     }),
     [
       step,
@@ -167,7 +193,8 @@ export default function QuestionnairePage() {
       customPrimaryProblem,
       livestreamGoods,
       privateDomainSize,
-      hasLegalReviewer
+      hasLegalReviewer,
+      attributions
     ]
   );
 
@@ -189,6 +216,7 @@ export default function QuestionnairePage() {
       setLivestreamGoods(saved.livestreamGoods);
       setPrivateDomainSize(saved.privateDomainSize);
       setHasLegalReviewer(saved.hasLegalReviewer);
+      setAttributions(saved.attributions);
     }
     setMounted(true);
   }, []);
@@ -213,6 +241,11 @@ export default function QuestionnairePage() {
       const removedSubcategoryIds = getSubcategories(id).map((item) => item.id);
       setSelectedSubcategoryIds((subs) => subs.filter((sub) => !removedSubcategoryIds.includes(sub)));
       setCustomSubcategories((custom) => custom.filter((item) => item.operationType !== id));
+      setAttributions((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
     }
   }
 
@@ -283,6 +316,13 @@ export default function QuestionnairePage() {
     }
     if (selection.contextAnswers?.hasLegalReviewer) {
       params.set("hasLegalReviewer", selection.contextAnswers.hasLegalReviewer);
+    }
+    if (selection.attributions) {
+      Object.entries(selection.attributions).forEach(([operationType, attribution]) => {
+        if (attribution) {
+          params.set(`attr_${operationType}`, attribution);
+        }
+      });
     }
 
     router.push(`/result?${params.toString()}`);
@@ -544,7 +584,7 @@ export default function QuestionnairePage() {
                       selected={primaryProblem === option.id}
                       onClick={() => {
                         if (isPrimaryProblem(option.id)) {
-                          setPrimaryProblem(option.id);
+                          handleSelectPrimaryProblem(option.id);
                         }
                       }}
                       label={option.label}
@@ -561,6 +601,30 @@ export default function QuestionnairePage() {
                   ) : null}
                 </div>
               </section>
+
+              {needsAttribution
+                ? selectedOperationTypes.map((operationType) => (
+                    <section key={operationType} className="space-y-3">
+                      <h2 className="text-sm font-semibold">
+                        「{getOperationCategory(operationType)?.name ?? operationType}」主要卡在哪？
+                      </h2>
+                      <div className="space-y-3">
+                        {ATTRIBUTION_DEFS[primaryProblem as AttributableProblem].map((def) => {
+                          const text = getAttributionOptionText(operationType, def.key);
+                          return (
+                            <OptionCard
+                              key={def.key}
+                              selected={attributions[operationType] === def.key}
+                              onClick={() => handleSelectAttribution(operationType, def.key)}
+                              label={text.label}
+                              description={text.description}
+                            />
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))
+                : null}
             </div>
             <div className="flex justify-end pt-2">
               <Button
@@ -568,7 +632,8 @@ export default function QuestionnairePage() {
                   !situation ||
                   !primaryProblem ||
                   (primaryProblem === "other" && !customPrimaryProblem.trim()) ||
-                  !contextAnswersComplete
+                  !contextAnswersComplete ||
+                  !attributionsComplete
                 }
                 onClick={() => setStep(4)}
               >
@@ -653,7 +718,29 @@ export default function QuestionnairePage() {
                 {primaryProblem ? (
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">本次优化重点</div>
-                    <p className="mt-1 text-muted-foreground">{EMPHASIS_FOCUS[primaryProblem]}</p>
+                    {primaryProblem !== "other" && attributionsComplete ? (
+                      <div className="mt-1 space-y-1">
+                        {selectedOperationTypes.map((operationType) => {
+                          const attribution = attributions[operationType];
+                          if (!attribution) {
+                            return null;
+                          }
+                          return (
+                            <p key={operationType}>
+                              <span className="font-medium">
+                                {getOperationCategory(operationType)?.name ?? operationType}
+                              </span>
+                              <span className="text-muted-foreground">
+                                （{getAttributionDef(attribution).label}）：
+                                {buildFocusLine(operationType, attribution)}
+                              </span>
+                            </p>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-muted-foreground">{EMPHASIS_FOCUS[primaryProblem]}</p>
+                    )}
                   </div>
                 ) : null}
               </div>

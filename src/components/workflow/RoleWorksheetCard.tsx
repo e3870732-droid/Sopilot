@@ -1,13 +1,15 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { StepPriority } from "@/data/attributions";
 import type { RoleWorksheet } from "@/types/workflow";
 import { WorkflowStageCard } from "./WorkflowStageCard";
 
 interface RoleWorksheetCardProps {
   worksheet: RoleWorksheet;
+  priorities?: StepPriority[];
 }
 
-export function RoleWorksheetCard({ worksheet }: RoleWorksheetCardProps) {
+export function RoleWorksheetCard({ worksheet, priorities }: RoleWorksheetCardProps) {
   return (
     <Card>
       <CardHeader className="space-y-3">
@@ -37,6 +39,7 @@ export function RoleWorksheetCard({ worksheet }: RoleWorksheetCardProps) {
                 index={index + 1}
                 step={step}
                 isLast={index === worksheet.steps.length - 1}
+                priority={priorities?.[index]}
               />
             ))}
           </div>

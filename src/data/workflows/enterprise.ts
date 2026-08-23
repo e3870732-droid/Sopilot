@@ -14,28 +14,32 @@ export const enterpriseWorkflow: RoleWorksheet = {
       action: "明确定位、核心话术与视觉规范，整理 PR、发布会、专家、案例和成果。",
       owner: "运营负责人",
       handoff: "与市场、内容、销售共用品牌口径。",
-      proof: "品牌手册 + 资产库"
+      proof: "品牌手册 + 资产库",
+      tags: ["not_documented", "inconsistent_standards"]
     },
     {
       title: "私域承接经营",
       action: "把公域、活动、销售和交付用户引入私域触点，打标签、分层并设计触达。",
       owner: "企业运营",
       handoff: "用户状态与销售、客服、交付同步。",
-      proof: "触点地图 + 标签体系"
+      proof: "触点地图 + 标签体系",
+      tags: ["handoff_info_loss", "unclear_ownership"]
     },
     {
       title: "数据口径治理",
       action: "明确指标定义、数据来源、更新频率和责任人，完成采集、清洗与看板。",
       owner: "企业运营 / 数据",
       handoff: "与财务、销售、产品确认同一指标计算方式。",
-      proof: "指标字典 + 数据看板"
+      proof: "指标字典 + 数据看板",
+      tags: ["inconsistent_standards", "data_scattered"]
     },
     {
       title: "经营分析与决策",
       action: "围绕收入、线索、用户、交付和成本输出结论、风险和建议，跟踪执行。",
       owner: "运营负责人 / 企业运营",
       handoff: "在经营会中明确决策人、动作人和截止时间。",
-      proof: "经营分析报告 + 行动表"
+      proof: "经营分析报告 + 行动表",
+      tags: ["no_review_rhythm", "unclear_ownership"]
     }
   ],
   cadence: [

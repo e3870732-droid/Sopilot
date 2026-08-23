@@ -218,6 +218,17 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
     } else {
       params.delete("customPrimaryProblem");
     }
+    // 归因参数与首要问题绑定：先清掉旧的，再按新值回写
+    Array.from(params.keys())
+      .filter((key) => key.startsWith("attr_"))
+      .forEach((key) => params.delete(key));
+    if (next.attributions) {
+      Object.entries(next.attributions).forEach(([operationType, attribution]) => {
+        if (attribution) {
+          params.set(`attr_${operationType}`, attribution);
+        }
+      });
+    }
     return params.toString();
   }
 

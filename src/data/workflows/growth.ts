@@ -14,28 +14,32 @@ export const growthWorkflow: RoleWorksheet = {
       action: "用 AARRR 漏斗拆解关键环节，定义北极星指标与增长假设。",
       owner: "增长负责人",
       handoff: "与产品、市场、销售对齐指标口径。",
-      proof: "增长模型文档 + 指标定义"
+      proof: "增长模型文档 + 指标定义",
+      tags: ["no_metrics_defined", "inconsistent_standards"]
     },
     {
       title: "定位漏损",
       action: "通过漏斗与用户路径数据，定位流失最严重的转化节点。",
       owner: "增长运营",
       handoff: "与数据团队确认埋点和归因。",
-      proof: "漏斗分析 + 漏损节点清单"
+      proof: "漏斗分析 + 漏损节点清单",
+      tags: ["data_scattered", "no_benchmark"]
     },
     {
       title: "设计实验",
       action: "针对漏损节点提出假设，设计小规模 A/B 测试与验证方案。",
       owner: "增长运营",
       handoff: "实验方案同步产品与研发排期。",
-      proof: "实验方案 + 排期记录"
+      proof: "实验方案 + 排期记录",
+      tags: ["no_templates", "priority_chaos"]
     },
     {
       title: "验证与规模化",
       action: "验证有效后放量，搭建自动化投放与承接链路，并沉淀方法论。",
       owner: "增长运营",
       handoff: "规模化方案同步市场、产品和销售。",
-      proof: "实验结论 + 增长周报"
+      proof: "实验结论 + 增长周报",
+      tags: ["no_review_rhythm", "not_documented"]
     }
   ],
   cadence: [

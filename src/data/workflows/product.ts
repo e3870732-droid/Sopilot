@@ -14,35 +14,40 @@ export const productWorkflow: RoleWorksheet = {
       action: "统一收集用户、经销商和内部反馈，区分问题、需求、建议与培训缺口。",
       owner: "产品运营",
       handoff: "用场景、频次和证据整理后交产品评审。",
-      proof: "需求池 + 优先级"
+      proof: "需求池 + 优先级",
+      tags: ["priority_chaos", "inconsistent_standards"]
     },
     {
       title: "方案与排期",
       action: "把需求转成用户故事、验收标准、上线影响和培训计划，跟进评审与排期。",
       owner: "产品运营 / 产品",
       handoff: "对外承诺前确认开发、测试与运营交付时间。",
-      proof: "需求单 + 版本排期"
+      proof: "需求单 + 版本排期",
+      tags: ["wrong_sequence", "handoff_churn"]
     },
     {
       title: "上线与验收",
       action: "完成测试、权限、配置、灰度、上线通知和回滚预案，按真实用户路径验收。",
       owner: "产品运营",
       handoff: "阻断问题明确升级人与恢复时间。",
-      proof: "上线检查单 + 验收记录"
+      proof: "上线检查单 + 验收记录",
+      tags: ["missing_checks", "handoff_info_loss"]
     },
     {
       title: "教育与采用",
       action: "用手册、FAQ、案例、直播或 1v1 培训降低学习成本，跟踪使用情况。",
       owner: "产品运营",
       handoff: "不会用的问题回流需求池。",
-      proof: "培训材料 + 使用数据"
+      proof: "培训材料 + 使用数据",
+      tags: ["unskilled_operation", "no_templates"]
     },
     {
       title: "监控与迭代",
       action: "观察渗透率、留存、使用时长、关键路径转化和满意度，形成版本复盘。",
       owner: "数据 / 产品运营",
       handoff: "给产品研发和业务高管一页结论。",
-      proof: "版本复盘 + 迭代建议"
+      proof: "版本复盘 + 迭代建议",
+      tags: ["no_metrics_defined", "no_review_rhythm"]
     }
   ],
   cadence: [
