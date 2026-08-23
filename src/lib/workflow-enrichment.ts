@@ -225,6 +225,9 @@ export function toMarkdown(output: SopOutput): string {
   lines.push("# 你的岗位工作纸");
   lines.push("");
   lines.push("## 企业画像");
+  if (output.company.companyName) {
+    lines.push(`- 公司名称：${output.company.companyName}`);
+  }
   lines.push(`- 行业：${getIndustryLabel(output.company.industry)}`);
   lines.push(`- 业务模式：${output.company.businessModel}`);
   lines.push(`- 企业规模：${getCompanyScaleLabel(output.company.companyScale)}`);

@@ -41,6 +41,7 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
           <div>
             <div className="font-medium text-muted-foreground">企业</div>
             <p className="mt-1">
+              {output.company.companyName ? `${output.company.companyName} · ` : ""}
               {getIndustryLabel(output.company.industry)} · {output.company.businessModel} ·{" "}
               {getCompanyScaleLabel(output.company.companyScale)}
             </p>

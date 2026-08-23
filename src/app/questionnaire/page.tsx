@@ -31,6 +31,7 @@ export default function QuestionnairePage() {
   const [step, setStep] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [industry, setIndustry] = useState<Industry | null>(null);
+  const [companyName, setCompanyName] = useState("");
   const [businessModel, setBusinessModel] = useState("");
   const [companyScale, setCompanyScale] = useState<CompanyScale | null>(null);
   const [selectedOperationTypes, setSelectedOperationTypes] = useState<OperationType[]>([]);
@@ -101,9 +102,10 @@ export default function QuestionnairePage() {
     return {
       industry,
       businessModel: businessModel.trim(),
-      companyScale
+      companyScale,
+      companyName: companyName.trim() || undefined
     };
-  }, [businessModel, companyScale, industry]);
+  }, [businessModel, companyName, companyScale, industry]);
 
   const situation = useMemo<SituationProfile | null>(() => {
     if (!budgetTier || platforms.length === 0) {
@@ -162,6 +164,7 @@ export default function QuestionnairePage() {
   const draft = useMemo<QuestionnaireDraft>(
     () => ({
       step,
+      companyName,
       industry,
       businessModel,
       companyScale,
@@ -180,6 +183,7 @@ export default function QuestionnairePage() {
     }),
     [
       step,
+      companyName,
       industry,
       businessModel,
       companyScale,
@@ -202,6 +206,7 @@ export default function QuestionnairePage() {
     const saved = loadQuestionnaireDraft();
     if (saved) {
       setStep(Math.min(Math.max(saved.step, 0), TOTAL_STEPS));
+      setCompanyName(saved.companyName);
       setIndustry(saved.industry);
       setBusinessModel(saved.businessModel);
       setCompanyScale(saved.companyScale);
@@ -293,6 +298,9 @@ export default function QuestionnairePage() {
 
     const params = new URLSearchParams();
     params.set("industry", selection.company.industry);
+    if (selection.company.companyName) {
+      params.set("companyName", selection.company.companyName);
+    }
     params.set("businessModel", selection.company.businessModel);
     params.set("companyScale", selection.company.companyScale);
     selection.operationTypes.forEach((id) => params.append("operationType", id));
@@ -353,6 +361,17 @@ export default function QuestionnairePage() {
             subtitle="这些信息会用于生成更贴合你企业情况的工作纸。"
           >
             <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">公司名称（选填）</label>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(event) => setCompanyName(event.target.value)}
+                  placeholder="例如：杭州某某服饰有限公司"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">企业所在的行业</label>
                 <select
@@ -652,6 +671,7 @@ export default function QuestionnairePage() {
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">企业信息</div>
                     <p className="mt-1">
+                      {company.companyName ? `${company.companyName} · ` : ""}
                       {INDUSTRY_OPTIONS.find((item) => item.id === company.industry)?.label} ·{" "}
                       {company.businessModel} ·{" "}
                       {COMPANY_SCALE_OPTIONS.find((item) => item.id === company.companyScale)?.label}

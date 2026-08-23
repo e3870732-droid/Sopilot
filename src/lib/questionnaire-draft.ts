@@ -5,6 +5,7 @@ import type { ContextAnswers, AttributionSelection, CustomSubcategory } from "@/
 
 export interface QuestionnaireDraft {
   step: number;
+  companyName: string;
   industry: Industry | null;
   businessModel: string;
   companyScale: CompanyScale | null;
@@ -27,6 +28,7 @@ const STORAGE_KEY = "sopilot:questionnaire:draft";
 function normalizeDraft(value: Partial<QuestionnaireDraft>): QuestionnaireDraft {
   return {
     step: typeof value.step === "number" ? value.step : 0,
+    companyName: typeof value.companyName === "string" ? value.companyName : "",
     industry: value.industry ?? null,
     businessModel: typeof value.businessModel === "string" ? value.businessModel : "",
     companyScale: value.companyScale ?? null,

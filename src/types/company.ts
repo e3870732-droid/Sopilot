@@ -20,6 +20,7 @@ export interface CompanyProfile {
   industry: Industry;
   businessModel: string;
   companyScale: CompanyScale;
+  companyName?: string;
 }
 
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {

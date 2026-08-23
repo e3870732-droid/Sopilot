@@ -24,6 +24,7 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
   const industry = readParams(params, "industry").find(isIndustry);
   const companyScale = readParams(params, "companyScale").find(isCompanyScale);
   const businessModel = readParams(params, "businessModel")[0]?.trim();
+  const companyName = readParams(params, "companyName")[0]?.trim() || undefined;
   const platforms = readParams(params, "platform").filter(isPlatform);
   const budgetTier = readParams(params, "budgetTier").find(isBudgetTier);
 
@@ -90,7 +91,7 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
   }
 
   return mapSelectionToSop({
-    company: { industry, businessModel, companyScale },
+    company: { industry, businessModel, companyScale, companyName },
     situation: { platforms, budgetTier },
     operationTypes,
     subcategoryIds,
