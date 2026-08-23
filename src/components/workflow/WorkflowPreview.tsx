@@ -61,18 +61,26 @@ export function WorkflowPreview({ output }: WorkflowPreviewProps) {
             {output.attributions && output.primaryProblem !== "other" ? (
               <div className="mt-1 space-y-1">
                 {output.overview.map((worksheet) => {
-                  const attribution = output.attributions?.[worksheet.operationType];
-                  if (!attribution) {
+                  const keys = output.attributions?.[worksheet.operationType] ?? [];
+                  const custom = output.customAttributions?.[worksheet.operationType]?.trim();
+                  if (keys.length === 0 && !custom) {
                     return null;
                   }
                   return (
                     <p key={worksheet.id} className="text-sm">
-                      <Badge variant="outline" className="mr-2">
-                        {getAttributionDef(attribution).label}
-                      </Badge>
+                      {keys.map((key) => (
+                        <Badge key={key} variant="outline" className="mr-2">
+                          {getAttributionDef(key).label}
+                        </Badge>
+                      ))}
+                      {custom ? (
+                        <Badge variant="outline" className="mr-2">
+                          其他
+                        </Badge>
+                      ) : null}
                       <span className="font-medium">{worksheet.name}：</span>
                       <span className="text-muted-foreground">
-                        {buildFocusLine(worksheet.operationType, attribution)}
+                        {buildFocusLine(worksheet.operationType, keys, custom)}
                       </span>
                     </p>
                   );

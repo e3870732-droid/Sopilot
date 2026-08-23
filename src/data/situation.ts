@@ -15,6 +15,13 @@ export const PLATFORM_OPTIONS: SituationOption<Platform>[] = [
   { id: "bilibili", label: "B站" },
   { id: "weibo", label: "微博" },
   { id: "private_domain", label: "私域（微信）" },
+  { id: "tiktok", label: "TikTok" },
+  { id: "youtube", label: "YouTube" },
+  { id: "instagram", label: "Instagram" },
+  { id: "facebook", label: "Facebook" },
+  { id: "x_twitter", label: "X（原 Twitter）" },
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "amazon", label: "亚马逊" },
   { id: "other", label: "其他" }
 ];
 

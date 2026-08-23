@@ -3,7 +3,7 @@ import { ATTRIBUTION_KEYS_BY_PROBLEM, isAttributionKey, type AttributableProblem
 import { isCompanyScale, isIndustry } from "@/types/company";
 import { isBudgetTier, isPlatform } from "@/types/situation";
 import { isOperationType, isPrimaryProblem, isTeamSize } from "@/types/user-profile";
-import type { AttributionSelection, ContextAnswers, CustomSubcategory, SopOutput } from "@/types/workflow";
+import type { AttributionKey, AttributionSelection, ContextAnswers, CustomAttributionSelection, CustomSubcategory, SopOutput } from "@/types/workflow";
 
 export type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -76,16 +76,24 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
     return null;
   }
 
-  // 归因追问：选了非「其他」的首要问题时，每个已选大类都必须有对应归因
+  // 归因追问：选了非「其他」的首要问题时，每个已选大类都至少要有一个归因（多选或自填）
   const attributions: AttributionSelection = {};
+  const customAttributions: CustomAttributionSelection = {};
   if (primaryProblem !== "other") {
     const allowedKeys = ATTRIBUTION_KEYS_BY_PROBLEM[primaryProblem as AttributableProblem];
     for (const operationType of operationTypes) {
-      const value = readParams(params, `attr_${operationType}`)[0];
-      if (isAttributionKey(value) && allowedKeys.includes(value)) {
-        attributions[operationType] = value;
-      } else {
+      const values = readParams(params, `attr_${operationType}`).filter(
+        (value): value is AttributionKey => isAttributionKey(value) && allowedKeys.includes(value)
+      );
+      const custom = readParams(params, `attr_custom_${operationType}`)[0]?.trim();
+      if (values.length === 0 && !custom) {
         return null;
+      }
+      if (values.length > 0) {
+        attributions[operationType] = values;
+      }
+      if (custom) {
+        customAttributions[operationType] = custom;
       }
     }
   }
@@ -100,6 +108,7 @@ export function parseSopOutputFromSearchParams(params: SearchParams): SopOutput 
     primaryProblem,
     customPrimaryProblem,
     contextAnswers,
-    attributions: primaryProblem === "other" ? undefined : attributions
+    attributions: primaryProblem === "other" ? undefined : attributions,
+    customAttributions: primaryProblem === "other" ? undefined : customAttributions
   });
 }

@@ -1,7 +1,7 @@
 import type { CompanyScale, Industry } from "@/types/company";
 import type { BudgetTier, Platform } from "@/types/situation";
 import type { OperationType, PrimaryProblem, TeamSize } from "@/types/user-profile";
-import type { ContextAnswers, AttributionSelection, CustomSubcategory } from "@/types/workflow";
+import type { ContextAnswers, AttributionKey, AttributionSelection, CustomAttributionSelection, CustomSubcategory } from "@/types/workflow";
 
 export interface QuestionnaireDraft {
   step: number;
@@ -21,6 +21,7 @@ export interface QuestionnaireDraft {
   privateDomainSize: ContextAnswers["privateDomainSize"] | null;
   hasLegalReviewer: ContextAnswers["hasLegalReviewer"] | null;
   attributions: AttributionSelection;
+  customAttributions: CustomAttributionSelection;
 }
 
 const STORAGE_KEY = "sopilot:questionnaire:draft";
@@ -43,8 +44,38 @@ function normalizeDraft(value: Partial<QuestionnaireDraft>): QuestionnaireDraft 
     livestreamGoods: value.livestreamGoods ?? null,
     privateDomainSize: value.privateDomainSize ?? null,
     hasLegalReviewer: value.hasLegalReviewer ?? null,
-    attributions: value.attributions && typeof value.attributions === "object" ? value.attributions : {}
+    attributions: normalizeAttributions(value.attributions),
+    customAttributions: normalizeCustomAttributions(value.customAttributions)
   };
+}
+
+function normalizeAttributions(value: unknown): AttributionSelection {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const result: AttributionSelection = {};
+  Object.entries(value as Record<string, unknown>).forEach(([key, entry]) => {
+    if (Array.isArray(entry)) {
+      result[key as OperationType] = entry.filter((item): item is AttributionKey => typeof item === "string") as AttributionKey[];
+    } else if (typeof entry === "string") {
+      // 兼容旧的单选草稿格式
+      result[key as OperationType] = [entry as AttributionKey];
+    }
+  });
+  return result;
+}
+
+function normalizeCustomAttributions(value: unknown): CustomAttributionSelection {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const result: CustomAttributionSelection = {};
+  Object.entries(value as Record<string, unknown>).forEach(([key, entry]) => {
+    if (typeof entry === "string") {
+      result[key as OperationType] = entry;
+    }
+  });
+  return result;
 }
 
 export function loadQuestionnaireDraft(): QuestionnaireDraft | null {

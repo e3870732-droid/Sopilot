@@ -17,6 +17,7 @@ export function getReportSignature(output: SopOutput): string {
     budgetTier: output.situation.budgetTier,
     contextAnswers: output.contextAnswers ?? {},
     attributions: output.attributions ?? {},
+    customAttributions: output.customAttributions ?? {},
     teamSize: output.teamSize,
     primaryProblem: output.primaryProblem,
     customPrimaryProblem: output.customPrimaryProblem ?? "",

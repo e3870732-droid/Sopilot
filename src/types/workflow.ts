@@ -45,7 +45,10 @@ export type AttributionKey =
   | "data_scattered";
 
 /** 归因按所选大类逐个回答：operationType → attribution */
-export type AttributionSelection = Partial<Record<OperationType, AttributionKey>>;
+export type AttributionSelection = Partial<Record<OperationType, AttributionKey[]>>;
+
+/** 归因「其他」自填内容：按大类存放 */
+export type CustomAttributionSelection = Partial<Record<OperationType, string>>;
 
 export interface WorksheetStep {
   title: string;
@@ -101,6 +104,7 @@ export interface QuestionnaireSelection {
   customPrimaryProblem?: string;
   contextAnswers?: ContextAnswers;
   attributions?: AttributionSelection;
+  customAttributions?: CustomAttributionSelection;
 }
 
 export interface SopOutput {
@@ -111,6 +115,7 @@ export interface SopOutput {
   customPrimaryProblem?: string;
   contextAnswers?: ContextAnswers;
   attributions?: AttributionSelection;
+  customAttributions?: CustomAttributionSelection;
   emphasis: PrimaryEmphasis;
   overview: RoleWorksheet[];
   subFlows: SubFlow[];

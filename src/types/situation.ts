@@ -7,6 +7,13 @@ export const PLATFORMS = [
   "bilibili",
   "weibo",
   "private_domain",
+  "tiktok",
+  "youtube",
+  "instagram",
+  "facebook",
+  "x_twitter",
+  "linkedin",
+  "amazon",
   "other"
 ] as const;
 

@@ -329,10 +329,24 @@ export function getAttributionOptionText(
   };
 }
 
-/** 组合优化重点文案：归因动作 + 分类链路 */
-export function buildFocusLine(operationType: OperationType, key: AttributionKey): string {
-  const def = getAttributionDef(key);
-  return `在「${CATEGORY_CHAINS[operationType]}」链路上，${def.action}。`;
+/** 组合优化重点文案：归因动作（可多选）+ 分类链路 + 自填项 */
+export function buildFocusLine(
+  operationType: OperationType,
+  keys: AttributionKey[],
+  custom?: string
+): string {
+  const chain = CATEGORY_CHAINS[operationType];
+  const actions = keys.map((key) => getAttributionDef(key).action);
+  const customText = custom?.trim();
+
+  if (actions.length === 0) {
+    return customText
+      ? `针对「${customText}」，在「${chain}」链路上补齐对应标准与动作。`
+      : `在「${chain}」链路上补齐标准动作。`;
+  }
+
+  const base = `在「${chain}」链路上，${actions.join("；")}。`;
+  return customText ? `${base}另外，针对「${customText}」补充专项动作。` : base;
 }
 
 export type StepPriority = "P0" | "P1" | "P2";
@@ -352,8 +366,8 @@ export function getStepPriority(
   }
 
   const stepTags = tags ?? [];
-  const selected = output.attributions?.[operationType];
-  if (selected && stepTags.includes(selected)) {
+  const selected = output.attributions?.[operationType] ?? [];
+  if (selected.some((key) => stepTags.includes(key))) {
     return "P0";
   }
 

@@ -256,10 +256,15 @@ export function toMarkdown(output: SopOutput): string {
   lines.push(`- 优先解决：${problemLabel}`);
   if (output.attributions && output.primaryProblem !== "other") {
     output.overview.forEach((worksheet) => {
-      const attribution = output.attributions?.[worksheet.operationType];
-      if (attribution) {
+      const keys = output.attributions?.[worksheet.operationType] ?? [];
+      const custom = output.customAttributions?.[worksheet.operationType]?.trim();
+      if (keys.length > 0 || custom) {
+        const labels = [
+          ...keys.map((key) => getAttributionDef(key).label),
+          ...(custom ? [`其他：${custom}`] : [])
+        ].join("、");
         lines.push(
-          `- ${worksheet.name}（归因：${getAttributionDef(attribution).label}）：${buildFocusLine(worksheet.operationType, attribution)}`
+          `- ${worksheet.name}（归因：${labels}）：${buildFocusLine(worksheet.operationType, keys, custom)}`
         );
       }
     });

@@ -223,9 +223,14 @@ export function ReportGenerator({ output }: { output: SopOutput }) {
       .filter((key) => key.startsWith("attr_"))
       .forEach((key) => params.delete(key));
     if (next.attributions) {
-      Object.entries(next.attributions).forEach(([operationType, attribution]) => {
-        if (attribution) {
-          params.set(`attr_${operationType}`, attribution);
+      Object.entries(next.attributions).forEach(([operationType, keys]) => {
+        keys?.forEach((key) => params.append(`attr_${operationType}`, key));
+      });
+    }
+    if (next.customAttributions) {
+      Object.entries(next.customAttributions).forEach(([operationType, custom]) => {
+        if (custom?.trim()) {
+          params.set(`attr_custom_${operationType}`, custom.trim());
         }
       });
     }

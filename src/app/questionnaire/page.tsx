@@ -22,7 +22,7 @@ import { isCompanyScale, isIndustry, type CompanyProfile, type CompanyScale, typ
 import { isBudgetTier, isPlatform, type BudgetTier, type Platform, type SituationProfile } from "@/types/situation";
 import { isPrimaryProblem, isTeamSize } from "@/types/user-profile";
 import type { OperationType, PrimaryProblem, TeamSize } from "@/types/user-profile";
-import type { AttributionKey, AttributionSelection, ContextAnswers, CustomSubcategory } from "@/types/workflow";
+import type { AttributionKey, AttributionSelection, ContextAnswers, CustomAttributionSelection, CustomSubcategory } from "@/types/workflow";
 
 const TOTAL_STEPS = 4;
 
@@ -46,6 +46,7 @@ export default function QuestionnairePage() {
   const [privateDomainSize, setPrivateDomainSize] = useState<ContextAnswers["privateDomainSize"] | null>(null);
   const [hasLegalReviewer, setHasLegalReviewer] = useState<ContextAnswers["hasLegalReviewer"] | null>(null);
   const [attributions, setAttributions] = useState<AttributionSelection>({});
+  const [customAttributions, setCustomAttributions] = useState<CustomAttributionSelection>({});
 
   const isConfirmStep = step >= TOTAL_STEPS;
 
@@ -75,23 +76,49 @@ export default function QuestionnairePage() {
     (!showPrivateDomainSize || privateDomainSize !== null) &&
     (!showLegalReviewer || hasLegalReviewer !== null);
 
-  // 归因追问：选了非「其他」的首要问题时，每个已选大类都要回答
+  // 归因追问：选了非「其他」的首要问题时，每个已选大类都至少要选一个归因或填写「其他」
   const needsAttribution = primaryProblem !== null && primaryProblem !== "other";
   const attributionsComplete =
-    !needsAttribution || selectedOperationTypes.every((op) => attributions[op] != null);
+    !needsAttribution ||
+    selectedOperationTypes.every(
+      (op) => (attributions[op]?.length ?? 0) > 0 || Boolean(customAttributions[op]?.trim())
+    );
 
   function handleSelectPrimaryProblem(id: PrimaryProblem) {
     setPrimaryProblem((previous) => {
       if (previous !== id) {
         // 归因选项归属于具体痛点，换痛点时清空已答归因
         setAttributions({});
+        setCustomAttributions({});
       }
       return id;
     });
   }
 
-  function handleSelectAttribution(operationType: OperationType, key: AttributionKey) {
-    setAttributions((current) => ({ ...current, [operationType]: key }));
+  function toggleAttribution(operationType: OperationType, key: AttributionKey) {
+    setAttributions((current) => {
+      const existing = current[operationType] ?? [];
+      const next = existing.includes(key)
+        ? existing.filter((item) => item !== key)
+        : [...existing, key];
+      return { ...current, [operationType]: next };
+    });
+  }
+
+  function toggleCustomAttribution(operationType: OperationType) {
+    setCustomAttributions((current) => {
+      const next = { ...current };
+      if (next[operationType] !== undefined) {
+        delete next[operationType];
+      } else {
+        next[operationType] = "";
+      }
+      return next;
+    });
+  }
+
+  function setCustomAttributionText(operationType: OperationType, text: string) {
+    setCustomAttributions((current) => ({ ...current, [operationType]: text }));
   }
 
   const company = useMemo<CompanyProfile | null>(() => {
@@ -142,7 +169,8 @@ export default function QuestionnairePage() {
       primaryProblem,
       customPrimaryProblem: customPrimaryProblem.trim(),
       contextAnswers,
-      attributions: primaryProblem === "other" ? undefined : attributions
+      attributions: primaryProblem === "other" ? undefined : attributions,
+      customAttributions: primaryProblem === "other" ? undefined : customAttributions
     };
   }, [
     attributions,
@@ -150,6 +178,7 @@ export default function QuestionnairePage() {
     company,
     contextAnswers,
     contextAnswersComplete,
+    customAttributions,
     customPrimaryProblem,
     customSubcategories,
     primaryProblem,
@@ -179,7 +208,8 @@ export default function QuestionnairePage() {
       livestreamGoods,
       privateDomainSize,
       hasLegalReviewer,
-      attributions
+      attributions,
+      customAttributions
     }),
     [
       step,
@@ -198,7 +228,8 @@ export default function QuestionnairePage() {
       livestreamGoods,
       privateDomainSize,
       hasLegalReviewer,
-      attributions
+      attributions,
+      customAttributions
     ]
   );
 
@@ -222,6 +253,7 @@ export default function QuestionnairePage() {
       setPrivateDomainSize(saved.privateDomainSize);
       setHasLegalReviewer(saved.hasLegalReviewer);
       setAttributions(saved.attributions);
+      setCustomAttributions(saved.customAttributions);
     }
     setMounted(true);
   }, []);
@@ -247,6 +279,11 @@ export default function QuestionnairePage() {
       setSelectedSubcategoryIds((subs) => subs.filter((sub) => !removedSubcategoryIds.includes(sub)));
       setCustomSubcategories((custom) => custom.filter((item) => item.operationType !== id));
       setAttributions((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      setCustomAttributions((current) => {
         const next = { ...current };
         delete next[id];
         return next;
@@ -326,9 +363,14 @@ export default function QuestionnairePage() {
       params.set("hasLegalReviewer", selection.contextAnswers.hasLegalReviewer);
     }
     if (selection.attributions) {
-      Object.entries(selection.attributions).forEach(([operationType, attribution]) => {
-        if (attribution) {
-          params.set(`attr_${operationType}`, attribution);
+      Object.entries(selection.attributions).forEach(([operationType, keys]) => {
+        keys?.forEach((key) => params.append(`attr_${operationType}`, key));
+      });
+    }
+    if (selection.customAttributions) {
+      Object.entries(selection.customAttributions).forEach(([operationType, custom]) => {
+        if (custom?.trim()) {
+          params.set(`attr_custom_${operationType}`, custom.trim());
         }
       });
     }
@@ -626,6 +668,7 @@ export default function QuestionnairePage() {
                     <section key={operationType} className="space-y-3">
                       <h2 className="text-sm font-semibold">
                         「{getOperationCategory(operationType)?.name ?? operationType}」主要卡在哪？
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">可多选</span>
                       </h2>
                       <div className="space-y-3">
                         {ATTRIBUTION_DEFS[primaryProblem as AttributableProblem].map((def) => {
@@ -633,13 +676,27 @@ export default function QuestionnairePage() {
                           return (
                             <OptionCard
                               key={def.key}
-                              selected={attributions[operationType] === def.key}
-                              onClick={() => handleSelectAttribution(operationType, def.key)}
+                              selected={(attributions[operationType] ?? []).includes(def.key)}
+                              onClick={() => toggleAttribution(operationType, def.key)}
                               label={text.label}
                               description={text.description}
                             />
                           );
                         })}
+                        <OptionCard
+                          selected={customAttributions[operationType] !== undefined}
+                          onClick={() => toggleCustomAttribution(operationType)}
+                          label="其他"
+                          description="以上都不准确，自己补充。"
+                        />
+                        {customAttributions[operationType] !== undefined ? (
+                          <textarea
+                            value={customAttributions[operationType]}
+                            onChange={(event) => setCustomAttributionText(operationType, event.target.value)}
+                            placeholder="用一两句话描述这个环节真正的卡点"
+                            className="min-h-16 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring"
+                          />
+                        ) : null}
                       </div>
                     </section>
                   ))
@@ -741,18 +798,23 @@ export default function QuestionnairePage() {
                     {primaryProblem !== "other" && attributionsComplete ? (
                       <div className="mt-1 space-y-1">
                         {selectedOperationTypes.map((operationType) => {
-                          const attribution = attributions[operationType];
-                          if (!attribution) {
+                          const keys = attributions[operationType] ?? [];
+                          const custom = customAttributions[operationType]?.trim();
+                          if (keys.length === 0 && !custom) {
                             return null;
                           }
+                          const labels = [
+                            ...keys.map((key) => getAttributionDef(key).label),
+                            ...(custom ? [`其他：${custom}`] : [])
+                          ].join("、");
                           return (
                             <p key={operationType}>
                               <span className="font-medium">
                                 {getOperationCategory(operationType)?.name ?? operationType}
                               </span>
                               <span className="text-muted-foreground">
-                                （{getAttributionDef(attribution).label}）：
-                                {buildFocusLine(operationType, attribution)}
+                                （{labels}）：
+                                {buildFocusLine(operationType, keys, custom)}
                               </span>
                             </p>
                           );
